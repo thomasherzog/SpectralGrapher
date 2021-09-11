@@ -1,6 +1,6 @@
 name: Build
 
-on: [ push, pull_request ]
+on: [ push, pull_request, workflow_dispatch ]
 
 env:
   sg_vulkan_sdk_version: "1.2.189.0"
@@ -16,25 +16,25 @@ jobs:
       matrix:
         config:
           - name: "Linux Clang (Release)"
-            artifact: "spectralgrapher-linux-clang-release.zip"
+            artifact: "SpectralGrapher-linux-clang-release"
             cc: "clang"
             cxx: "clang++"
             cmake-build-type: "Release"
 
           - name: "Linux Clang (Debug)"
-            artifact: "spectralgrapher-linux-clang-debug.zip"
+            artifact: "SpectralGrapher-linux-clang-debug"
             cc: "clang"
             cxx: "clang++"
             cmake-build-type: "Debug"
 
           - name: "Linux GCC (Release)"
-            artifact: "spectralgrapher-linux-gcc-release.zip"
+            artifact: "SpectralGrapher-linux-gcc-release"
             cc: "gcc"
             cxx: "g++"
             cmake-build-type: "Debug"
 
           - name: "Linux GCC (Debug)"
-            artifact: "spectralgrapher-linux-gcc-debug.zip"
+            artifact: "SpectralGrapher-linux-gcc-debug"
             cc: "gcc"
             cxx: "g++"
             cmake-build-type: "Debug"
@@ -55,7 +55,6 @@ jobs:
             curl \
             xorg-dev \
             libvulkan-dev \
-            zip
 
       - name: Install Vulkan SDK
         shell: bash
@@ -79,17 +78,11 @@ jobs:
       - name: Build SpectralGrapher
         shell: bash
         run: |
-          cmake --build ./bin/release
-
-      - name: Package artifact
-        shell: bash
-        run: |
-          (cd "bin/release" && zip -r "${{github.workspace}}/${{matrix.config.artifact}}" ./*)
-          ls ${{github.workspace}}/
+          cmake --build ${{github.workspace}}/bin/release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          path: ${{github.workspace}}/${{ matrix.config.artifact }}
+          path: ${{github.workspace}}/bin/release/SpectralGrapher
           name: ${{ matrix.config.artifact }}
