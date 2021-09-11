@@ -1,0 +1,78 @@
+name: Build
+
+on: [ push, pull_request ]
+
+env:
+  sg_vulkan_sdk_version: "1.2.189.0"
+  sg_vulkan_sdk_path: "$GITHUB_WORKSPACE/../vulkan_sdk/"
+
+jobs:
+  Linux:
+    name: ${{ matrix.config.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: "Linux Clang"
+            artifact: "spectralgrapher-linux-clang.tar.xz"
+            cc: "clang"
+            cxx: "clang++"
+
+          - name: "Linux GCC"
+            artifact: "spectralgrapher-linux-gcc.tar.xz"
+            cc: "gcc"
+            cxx: "g++"
+
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Initialize environment
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            curl \
+            xorg-dev \
+            libvulkan-dev
+
+      - name: Install Vulkan SDK
+        shell: bash
+        run: |
+          curl -LS -o vulkansdk.tar.gz \
+            https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/linux/vulkansdk-linux-x86_64-${{ env.sg_vulkan_sdk_version }}.tar.gz
+          mkdir "${{ env.sg_vulkan_sdk_path }}"
+          tar xfz vulkansdk.tar.gz -C "${{ env.sg_vulkan_sdk_path }}"
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          export CC=${{ matrix.config.cc }}
+          export CXX=${{ matrix.config.cxx }}
+          export VULKAN_SDK="${{ env.sg_vulkan_sdk_path }}/${{ env.sg_vulkan_sdk_version }}/x86_64"
+          export PATH=$VULKAN_SDK/bin:$PATH
+          export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
+          export VK_LAYER_PATH=$VULKAN_SDK/etc/explicit_layer.d
+          cmake -S . -B ./bin/release -D CMAKE_BUILD_TYPE=Release
+
+      - name: Build SpectralGrapher
+        shell: bash
+        run: |
+          cmake --build ./bin/release
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          tar cfz ${{ matrix.config.artifact }} ./bin/release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: ${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
