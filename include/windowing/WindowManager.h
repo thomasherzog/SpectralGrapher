@@ -4,6 +4,7 @@
 #include "windowing/BaseWindow.h"
 #include <memory>
 #include <stdexcept>
+#include <algorithm>
 
 namespace windowing {
     class WindowManager;

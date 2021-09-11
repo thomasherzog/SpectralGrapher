@@ -4,6 +4,7 @@
 #include "graphics/vulkan/debug/DebugMessenger.h"
 #include <iostream>
 #include <optional>
+#include <algorithm>
 
 namespace vulkan {
     class Instance;
