@@ -84,11 +84,12 @@ jobs:
       - name: Package artifact
         shell: bash
         run: |
-          dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-          (cd "bin/release" && zip -r "${dir}/${{matrix.config.artifact}}" ./*)
+          (cd "bin/release" && zip -r "${{github.workspace}}/${{matrix.config.artifact}}" ./*)
+          ls ${{github.workspace}}/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: /${{ matrix.config.artifact }}
+          if-no-files-found: error
+          path: ${{github.workspace}}/${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
