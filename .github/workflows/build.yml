@@ -85,10 +85,10 @@ jobs:
         shell: bash
         run: |
           dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-          (cd "bin/release" && zip -r "${dir}/${{matrix.config.artifact}}.zip" ./*)
+          (cd "bin/release" && zip -r "/${{matrix.config.artifact}}.zip" ./*)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: ${{ matrix.config.artifact }}
+          path: /${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
