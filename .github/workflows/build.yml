@@ -127,9 +127,9 @@ jobs:
           submodules: recursive
 
       - name: Install Vulkan SDK
-        shell: powershell
+        shell: cmd
         run: |
-          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -OutFile "VulkanSDK.exe"
+          curl --url "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -o "VulkanSDK.exe"
           7z x -aoa VulkanSDK.exe -oC:\\VulkanSDK\\${{env.sg_vulkan_sdk_version}}
 
       - name: Configure CMake
