@@ -86,3 +86,73 @@ jobs:
           if-no-files-found: error
           path: ${{github.workspace}}/bin/release/SpectralGrapher
           name: ${{ matrix.config.artifact }}
+
+
+  Windows:
+    name: ${{ matrix.config.name }}
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: "Windows MSVC (Release)"
+            artifact: "SpectralGrapher-windows-msvc-release"
+            cc: "cl"
+            cxx: "cl"
+            cmake-build-type: "Release"
+
+          - name: "Windows MSVC (Debug)"
+            artifact: "SpectralGrapher-windows-msvc-debug"
+            cc: "cl"
+            cxx: "cl"
+            cmake-build-type: "Debug"
+
+          - name: "Windows MinGW (Release)"
+            artifact: "SpectralGrapher-windows-mingw-release"
+            cc: "gcc"
+            cxx: "g++"
+            cmake-build-type: "Release"
+
+          - name: "Windows MinGW (Debug)"
+            artifact: "SpectralGrapher-windows-mingw-debug"
+            cc: "gcc"
+            cxx: "g++"
+            cmake-build-type: "Debug"
+
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Initialize environment
+
+      - name: Install Vulkan SDK
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}"/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -OutFile VulkanSDK.exe
+          $installer = Start-Process -FilePath VulkanSDK.exe -Wait -PassThru -ArgumentList @("/S");
+          $installer.WaitForExit();
+
+      - name: Configure CMake
+        shell: powershell
+        run: |
+          $Env:CC = "${{ matrix.config.cc }}"
+          $Env:CXX = "${{ matrix.config.cxx }}"
+          $Env:VULKAN_SDK = "C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}"
+          $Env:Path += ";C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}/Bin"
+          $Env:LD_LIBRARY_PATH += ";C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}/Lib";
+          cmake -S . -B bin/release -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}}
+
+      - name: Build SpectralGrapher
+        shell: powershell
+        run: |
+          cmake --build ${{github.workspace}}/bin/release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          path: ${{github.workspace}}/bin/release/SpectralGrapher.exe
+          name: ${{ matrix.config.artifact }}
