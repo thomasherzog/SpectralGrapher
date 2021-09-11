@@ -78,7 +78,7 @@ jobs:
       - name: Build SpectralGrapher
         shell: bash
         run: |
-          cmake --build ${{github.workspace}}/bin/release
+          cmake --build ${{github.workspace}}/bin/release --target SpectralGrapher
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
@@ -140,12 +140,12 @@ jobs:
           $Env:VULKAN_SDK = "C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}"
           $Env:Path += ";C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}/Bin"
           $Env:LD_LIBRARY_PATH += ";C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}/Lib";
-          cmake -S . -B bin/release -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}}
+          cmake -S . -B ${{github.workspace}}/bin/release -G "CodeBlocks - NMake Makefiles" -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}} -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX
 
       - name: Build SpectralGrapher
         shell: powershell
         run: |
-          cmake --build ${{github.workspace}}/bin/release
+          cmake --build ${{github.workspace}}/bin/release --target SpectralGrapher
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
