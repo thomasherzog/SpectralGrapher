@@ -126,8 +126,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Initialize environment
-
       - name: Install Vulkan SDK
         shell: powershell
         run: |
