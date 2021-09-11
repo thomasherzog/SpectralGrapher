@@ -15,15 +15,29 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: "Linux Clang"
-            artifact: "spectralgrapher-linux-clang.tar.xz"
+          - name: "Linux Clang (Release)"
+            artifact: "spectralgrapher-linux-clang-release.zip"
             cc: "clang"
             cxx: "clang++"
+            cmake-build-type: "Release"
 
-          - name: "Linux GCC"
-            artifact: "spectralgrapher-linux-gcc.tar.xz"
+          - name: "Linux Clang (Debug)"
+            artifact: "spectralgrapher-linux-clang-debug.zip"
+            cc: "clang"
+            cxx: "clang++"
+            cmake-build-type: "Debug"
+
+          - name: "Linux GCC (Release)"
+            artifact: "spectralgrapher-linux-gcc-release.zip"
             cc: "gcc"
             cxx: "g++"
+            cmake-build-type: "Debug"
+
+          - name: "Linux GCC (Debug)"
+            artifact: "spectralgrapher-linux-gcc-debug.zip"
+            cc: "gcc"
+            cxx: "g++"
+            cmake-build-type: "Debug"
 
     steps:
       - name: Checkout repository and submodules
@@ -40,7 +54,8 @@ jobs:
             cmake \
             curl \
             xorg-dev \
-            libvulkan-dev
+            libvulkan-dev \
+            zip
 
       - name: Install Vulkan SDK
         shell: bash
@@ -59,7 +74,7 @@ jobs:
           export PATH=$VULKAN_SDK/bin:$PATH
           export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
           export VK_LAYER_PATH=$VULKAN_SDK/etc/explicit_layer.d
-          cmake -S . -B ./bin/release -D CMAKE_BUILD_TYPE=Release
+          cmake -S . -B bin/release -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}}
 
       - name: Build SpectralGrapher
         shell: bash
@@ -69,7 +84,8 @@ jobs:
       - name: Package artifact
         shell: bash
         run: |
-          tar cfz ${{ matrix.config.artifact }} ./bin/release
+          dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+          (cd "bin/release" && zip -r "${dir}/${{matrix.config.artifact}}.zip" ./*)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
