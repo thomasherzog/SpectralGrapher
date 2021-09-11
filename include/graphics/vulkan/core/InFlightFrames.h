@@ -1,0 +1,42 @@
+#ifndef SPECTRALGRAPHER_INFLIGHTFRAMES_H
+#define SPECTRALGRAPHER_INFLIGHTFRAMES_H
+
+#include "graphics/vulkan/core/Context.h"
+
+namespace vulkan {
+    class InFlightFrames;
+
+    struct SyncObject;
+}
+
+class vulkan::InFlightFrames {
+public:
+    InFlightFrames(std::shared_ptr<Context> context, int maxFramesInFlight);
+
+    ~InFlightFrames();
+
+    SyncObject getNextSyncObject();
+
+private:
+    std::shared_ptr<Context> context;
+
+    int currentFrame = 0;
+
+    std::vector<vk::Semaphore> imageAvailableSemaphores;
+
+    std::vector<vk::Semaphore> renderFinishedSemaphores;
+
+    std::vector<vk::Fence> fences;
+
+};
+
+struct vulkan::SyncObject {
+    vk::Semaphore imageAvailableSemaphore;
+
+    vk::Semaphore renderFinishedSemaphore;
+
+    vk::Fence fence;
+};
+
+
+#endif //SPECTRALGRAPHER_INFLIGHTFRAMES_H

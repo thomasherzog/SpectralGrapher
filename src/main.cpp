@@ -1,0 +1,16 @@
+#include <iostream>
+#include "windowing/WindowManager.h"
+#include "graphics/vulkan/core/SharedContext.h"
+
+#include "examples/TestImWindow.h"
+
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+
+    auto manager = windowing::WindowManager::getInstance();
+    manager->addWindow(std::make_shared<TestImWindow>());
+
+    manager->startManager();
+
+    return 0;
+}
