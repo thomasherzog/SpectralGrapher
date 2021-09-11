@@ -129,8 +129,8 @@ jobs:
       - name: Install Vulkan SDK
         shell: powershell
         run: |
-          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}"/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -OutFile VulkanSDK.exe
-          7z x -aoa VulkanSDK.exe -oC:\\VulkanSDK
+          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -OutFile "VulkanSDK.exe"
+          7z x -aoa VulkanSDK.exe -oC:\\VulkanSDK\\${{env.sg_vulkan_sdk_version}}
 
       - name: Configure CMake
         shell: powershell
