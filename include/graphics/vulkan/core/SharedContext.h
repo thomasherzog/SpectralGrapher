@@ -9,6 +9,7 @@
 #include <graphics/vulkan/core/Device.h>
 #include <graphics/vulkan/debug/DebugMessenger.h>
 
+#include <vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
 
 namespace vulkan {
@@ -30,6 +31,8 @@ public:
 
     std::shared_ptr<Device> getDevice();
 
+    VmaAllocator getAllocator();
+
 private:
     std::shared_ptr<Instance> instance;
 
@@ -38,6 +41,8 @@ private:
     std::shared_ptr<Surface> surface;
 
     std::shared_ptr<Device> device;
+
+    VmaAllocator allocator{};
 
 };
 

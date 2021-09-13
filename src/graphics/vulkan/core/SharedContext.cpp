@@ -2,6 +2,9 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 namespace vulkan {
 
     SharedContext::SharedContext(const std::vector<std::tuple<std::string, bool>> &instanceExtensions,
@@ -25,6 +28,12 @@ namespace vulkan {
 
         device = std::make_shared<Device>(physicalDevice[0], surface->getSurface(), deviceExtensions);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(device->getVkDevice());
+
+        VmaAllocatorCreateInfo allocatorCreateInfo{};
+        allocatorCreateInfo.instance = instance->getInstance();
+        allocatorCreateInfo.physicalDevice = device->getPhysicalDevice();
+        allocatorCreateInfo.device = device->getVkDevice();
+        vmaCreateAllocator(&allocatorCreateInfo, &allocator);
     }
 
     SharedContext::~SharedContext() {
@@ -47,6 +56,10 @@ namespace vulkan {
 
     std::shared_ptr<Device> SharedContext::getDevice() {
         return device;
+    }
+
+    VmaAllocator SharedContext::getAllocator() {
+        return allocator;
     }
 
 }
