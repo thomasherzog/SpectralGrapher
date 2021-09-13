@@ -90,7 +90,7 @@ jobs:
 
   Windows:
     name: ${{ matrix.config.name }}
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     strategy:
       fail-fast: false
@@ -100,24 +100,28 @@ jobs:
             artifact: "SpectralGrapher-windows-msvc-release"
             cc: "cl"
             cxx: "cl"
+            cmake-generator: "Visual Studio 16 2019"
             cmake-build-type: "Release"
 
           - name: "Windows MSVC (Debug)"
             artifact: "SpectralGrapher-windows-msvc-debug"
             cc: "cl"
             cxx: "cl"
+            cmake-generator: "Visual Studio 16 2019"
             cmake-build-type: "Debug"
 
           - name: "Windows MinGW (Release)"
             artifact: "SpectralGrapher-windows-mingw-release"
             cc: "gcc"
             cxx: "g++"
+            cmake-generator: "MinGW Makefiles"
             cmake-build-type: "Release"
 
           - name: "Windows MinGW (Debug)"
             artifact: "SpectralGrapher-windows-mingw-debug"
             cc: "gcc"
             cxx: "g++"
+            cmake-generator: "MinGW Makefiles"
             cmake-build-type: "Debug"
 
     steps:
@@ -146,7 +150,9 @@ jobs:
         shell: powershell
         run: |
           cmake --build ${{github.workspace}}/bin/release --target SpectralGrapher --config ${{matrix.config.cmake-build-type}}
-          tree .
+          if("${{matrix.config.cmake-generator}}" -like "Visual Studio*") {
+            Copy-Item -Path ${{github.workspace}}/bin/release/${{matrix.config.cmake-build-type}}/SpectralGrapher.exe -Destination ${{github.workspace}}/bin/release/SpectralGrapher.exe
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
