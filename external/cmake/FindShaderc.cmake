@@ -3,7 +3,7 @@ if (WIN32)
             NAMES shaderc/shaderc.h
             HINTS "$ENV{VULKAN_SDK}/Include")
 
-    if (CMAKE_BUILD_TYPE MATCHES Debug)
+    if (CMAKE_BUILD_TYPE MATCHES Debug AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         find_library(Shaderc_LIBRARY
                 NAMES "shaderc_combinedd"
                 HINTS "$ENV{VULKAN_SDK}/Lib"
