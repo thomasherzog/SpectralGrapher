@@ -3,14 +3,18 @@
 
 #include "windowing/ImGuiWindow.h"
 
+#include <implot.h>
+
 class TestImWindow : public windowing::ImGuiWindow {
 public:
     TestImWindow();
 
+    ~TestImWindow();
+
     void onImGuiFrameRender() override;
 
 private:
-
+  ImPlotContext* implotContext;
 
 
 };

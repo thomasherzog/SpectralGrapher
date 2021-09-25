@@ -1,6 +1,25 @@
 #include "examples/TestImWindow.h"
 
-TestImWindow::TestImWindow() = default;
+#include <cmrc/cmrc.hpp>
+CMRC_DECLARE(fonts);
+
+TestImWindow::TestImWindow() {
+    implotContext = ImPlot::CreateContext();
+
+    auto fs = cmrc::fonts::get_filesystem();
+    auto font = fs.open("fonts/verdana.ttf");
+    std::string fontMem{font.begin(), font.end()};
+    ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem.data(), fontMem.size(), 13.0f);
+
+    context->executeTransient([](VkCommandBuffer commandBuffer) {
+        return ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+    });
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
+}
+
+TestImWindow::~TestImWindow() {
+    ImPlot::DestroyContext(implotContext);
+}
 
 void TestImWindow::onImGuiFrameRender() {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
@@ -27,6 +46,7 @@ void TestImWindow::onImGuiFrameRender() {
     }
 
     ImGui::ShowDemoWindow();
-
+    ImPlot::ShowDemoWindow();
 }
+
 

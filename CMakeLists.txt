@@ -30,3 +30,4 @@ add_executable(SpectralGrapher
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
 add_subdirectory(external)
+add_subdirectory(assets)
