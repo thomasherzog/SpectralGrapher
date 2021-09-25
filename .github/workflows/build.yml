@@ -135,6 +135,8 @@ jobs:
         run: |
           curl --url "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -o "VulkanSDK.exe"
           7z x -aoa VulkanSDK.exe -oC:\\VulkanSDK\\${{env.sg_vulkan_sdk_version}}
+          curl --url "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-DebugLibs.zip" -o "DebugLibs.zip"
+          7z x -aoa DebugLibs.zip -oC:\\VulkanSDK\\${{env.sg_vulkan_sdk_version}}
 
       - name: Configure CMake
         shell: powershell
