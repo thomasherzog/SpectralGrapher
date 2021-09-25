@@ -25,6 +25,7 @@ add_executable(SpectralGrapher
         src/windowing/ImGuiWindow.cpp
 
         src/examples/TestImWindow.cpp
+        src/examples/SimpleRasterizerWindowEx.cpp
         )
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)

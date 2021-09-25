@@ -5,8 +5,6 @@
 #include "examples/TestImWindow.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-
     auto manager = windowing::WindowManager::getInstance();
     manager->addWindow(std::make_shared<TestImWindow>());
 
