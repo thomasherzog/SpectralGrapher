@@ -37,6 +37,7 @@ namespace vulkan {
     }
 
     SharedContext::~SharedContext() {
+        vmaDestroyAllocator(allocator);
         device.reset();
         surface->destroy(instance->getInstance());
         if (debugMessenger.has_value()) {

@@ -29,7 +29,6 @@ public:
     void onWindowRender() override;
 
 protected:
-
     std::shared_ptr<vulkan::Context> context;
 
     std::unique_ptr<vulkan::Swapchain> swapchain;

@@ -53,7 +53,7 @@ namespace windowing {
                 windows[i]->renderWindow();
             }
 
-            glfwWaitEvents();
+            glfwPollEvents();
         }
     }
 

@@ -16,8 +16,11 @@ add_executable(SpectralGrapher
         src/graphics/vulkan/core/Surface.cpp
         src/graphics/vulkan/core/InFlightFrames.cpp
         src/graphics/vulkan/core/Swapchain.cpp
+        src/graphics/vulkan/core/Texture.cpp
 
         src/graphics/vulkan/debug/DebugMessenger.cpp
+
+        src/graphics/vulkan/rendering/VulkanRenderer.cpp
 
         src/windowing/WindowManager.cpp
         src/windowing/BaseWindow.cpp

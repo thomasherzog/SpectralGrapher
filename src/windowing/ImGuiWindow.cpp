@@ -100,8 +100,6 @@ namespace windowing {
                 commandBuffer,
                 syncObject.renderFinishedSemaphore
         ), syncObject.fence);
-
-
     }
 
     void ImGuiWindow::onRender(vulkan::SyncObject syncObject, uint32_t imageIndex) {

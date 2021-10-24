@@ -6,15 +6,15 @@ CMRC_DECLARE(fonts);
 TestImWindow::TestImWindow() {
     implotContext = ImPlot::CreateContext();
 
-    auto fs = cmrc::fonts::get_filesystem();
-    auto font = fs.open("fonts/verdana.ttf");
+    /*auto fs = cmrc::fonts::get_filesystem();
+    auto font = fs.open("fonts/OpenSans-Regular.ttf");
     std::string fontMem{font.begin(), font.end()};
-    ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem.data(), fontMem.size(), 13.0f);
-
+    auto openSansFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem.data(), fontMem.size(), 16.0f);
+    ImGui::GetIO().FontDefault = openSansFont;
     context->executeTransient([](VkCommandBuffer commandBuffer) {
         return ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
     });
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    ImGui_ImplVulkan_DestroyFontUploadObjects();*/
 }
 
 TestImWindow::~TestImWindow() {
