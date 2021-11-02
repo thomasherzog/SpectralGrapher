@@ -1,3 +1,3 @@
-glslc compute/test.comp -o compute/test.comp.spv
-glslc rasterization/basic.frag -o rasterization/basic.frag.spv
-glslc rasterization/basic.vert -o rasterization/basic.vert.spv
+glslc compute/test.comp -o ../../cmake-build-debug/test.comp.spv
+glslc rasterization/basic.frag -o ../../cmake-build-debug/basic.frag.spv
+glslc rasterization/basic.vert -o ../../cmake-build-debug/basic.vert.spv

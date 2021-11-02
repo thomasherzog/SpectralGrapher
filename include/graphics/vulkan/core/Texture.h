@@ -6,15 +6,11 @@
 
 namespace vulkan {
     class Texture;
-
-    //class Texture2D;
 }
 
 class vulkan::Texture {
 public:
-    Texture(std::shared_ptr<Context> context,
-            vk::ImageCreateInfo imageCreateInfo,
-            VmaAllocationCreateInfo allocationInfo);
+    Texture(std::shared_ptr<Context> context, vk::ImageCreateInfo imageCreateInfo, VmaAllocationCreateInfo allocationInfo);
 
     ~Texture();
 
@@ -32,12 +28,6 @@ public:
 
 
 };
-
-/*class vulkan::Texture2D {
-public:
-    Texture2D();
-
-};*/
 
 
 #endif //SPECTRALGRAPHER_TEXTURE_H

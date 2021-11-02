@@ -2,6 +2,9 @@
 #define SPECTRALGRAPHER_SIMPLERASTERIZERWINDOWEX_H
 
 #include "windowing/VulkanWindow.h"
+#include "renderer/ComputeRenderer.h"
+#include "renderer/SwapchainImageRenderer.h"
+#include "renderer/ImGuiRenderer.h"
 
 class SimpleRasterizerWindowEx : public windowing::VulkanWindow {
 public:
@@ -14,69 +17,15 @@ public:
     void onSwapchainRebuild() override;
 
 private:
+    std::unique_ptr<ComputeRenderer> computeRenderer;
 
-    struct ComputeRenderer {
-        vk::DescriptorSetLayout descriptorSetLayout;
+    std::unique_ptr<SwapchainImageRenderer> imageRenderer;
 
-        vk::PipelineLayout pipelineLayout;
+    std::unique_ptr<ImGuiRenderer> imguiRenderer;
 
-        vk::Pipeline pipeline;
+    vk::Semaphore imgToImGuiSemaphore;
 
-        std::vector<vk::CommandPool> commandPools;
-
-        std::vector<vk::CommandBuffer> commandBuffers;
-
-        vk::DescriptorPool descriptorPool;
-
-        vk::DescriptorSet descriptorSet;
-
-        vk::Image image;
-        VmaAllocation imageAllocation;
-
-        vk::Sampler imageSampler;
-        vk::ImageView imageView;
-
-        vk::Semaphore semaphore;
-    } compute;
-
-    void createComputeImage();
-
-    void createDescriptorSetLayout();
-
-    void createComputePipeline();
-
-    void createComputeCommandPool();
-
-    void createDescriptorPool();
-
-    void createDescriptorSets();
-
-    void createCommandBuffers();
-
-
-    struct BasicGraphicsRenderer {
-        vk::RenderPass renderPass;
-
-        vk::DescriptorSetLayout descriptorSetLayout;
-
-        vk::PipelineLayout pipelineLayout;
-
-        vk::Pipeline pipeline;
-
-        vk::DescriptorSet descriptorSet;
-
-        std::vector<vk::Framebuffer> framebuffers;
-    } graphics;
-
-    void createRenderPass();
-
-    void createFramebuffers();
-
-    void createGraphicsDescriptorSetLayout();
-
-    void createGraphicsDescriptorSet();
-
-    void createRasterizer();
+    std::vector<ImTextureID> textures;
 
 };
 

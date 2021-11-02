@@ -20,8 +20,6 @@ add_executable(SpectralGrapher
 
         src/graphics/vulkan/debug/DebugMessenger.cpp
 
-        src/graphics/vulkan/rendering/VulkanRenderer.cpp
-
         src/windowing/WindowManager.cpp
         src/windowing/BaseWindow.cpp
         src/windowing/VulkanWindow.cpp
@@ -29,6 +27,12 @@ add_executable(SpectralGrapher
 
         src/examples/TestImWindow.cpp
         src/examples/SimpleRasterizerWindowEx.cpp
+
+        src/renderer/RecordedCommandBuffer.cpp
+        src/renderer/ComputeRenderer.cpp
+        src/renderer/SwapchainImageRenderer.cpp
+        src/renderer/ImGuiRenderer.cpp
+
         )
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
