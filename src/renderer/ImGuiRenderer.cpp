@@ -69,7 +69,7 @@ ImGuiRenderer::~ImGuiRenderer() {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 
-    for (auto framebuffer: framebuffers) {
+    for (auto &framebuffer: framebuffers) {
         context->getDevice()->getVkDevice().destroyFramebuffer(framebuffer);
     }
     context->getDevice()->getVkDevice().destroyRenderPass(renderPass);
@@ -160,7 +160,7 @@ void ImGuiRenderer::onSwapchainRebuild(vulkan::Swapchain &swapchain) {
     context->getDevice()->getVkDevice().destroyRenderPass(renderPass);
     createRenderPass(swapchain);
 
-    for (auto framebuffer: framebuffers) {
+    for (auto &framebuffer: framebuffers) {
         context->getDevice()->getVkDevice().destroyFramebuffer(framebuffer);
     }
 

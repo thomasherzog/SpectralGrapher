@@ -4,8 +4,10 @@ namespace vulkan {
 
     Context::Context(const std::vector<std::tuple<std::string, bool>> &instanceExtensions,
                      const std::vector<std::string> &validationLayers,
-                     const std::vector<std::tuple<std::string, bool>> &deviceExtensions, GLFWwindow *window) {
-        sharedContext = std::make_shared<SharedContext>(instanceExtensions, validationLayers, deviceExtensions, window);
+                     const std::vector<std::tuple<std::string, bool>> &deviceExtensions,
+                     vk::PhysicalDeviceFeatures physicalDeviceFeatures,
+                     void* devicePNext, GLFWwindow *window) {
+        sharedContext = std::make_shared<SharedContext>(instanceExtensions, validationLayers, deviceExtensions, physicalDeviceFeatures, devicePNext, window);
 
         auto queueFamily = sharedContext->getDevice()->findQueueFamily(vk::QueueFlagBits::eGraphics);
         if (queueFamily.has_value()) {
@@ -36,7 +38,7 @@ namespace vulkan {
     void Context::endTransientExecution(vk::CommandBuffer commandBuffer) {
         commandBuffer.end();
         vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &commandBuffer, 0, nullptr);
-        sharedContext->getDevice()->getGraphicsQueue().submit(1, &submitInfo, nullptr);
+        sharedContext->getDevice()->getGraphicsQueue().submit(submitInfo, nullptr);
 
         sharedContext->getDevice()->getGraphicsQueue().waitIdle();
 

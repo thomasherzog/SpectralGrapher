@@ -21,6 +21,8 @@ public:
     SharedContext(const std::vector<std::tuple<std::string, bool>> &instanceExtensions,
                   const std::vector<std::string> &validationLayers,
                   const std::vector<std::tuple<std::string, bool>>& deviceExtensions,
+                  vk::PhysicalDeviceFeatures physicalDeviceFeatures,
+                  void* devicePNext,
                   GLFWwindow *window);
 
     ~SharedContext();

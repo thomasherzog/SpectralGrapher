@@ -5,7 +5,8 @@ list(APPEND cpm_packages
         freetype
         vma
         implot
-        spirv-headers)
+        spirv-headers
+        glm)
 
 include(CPM)
 

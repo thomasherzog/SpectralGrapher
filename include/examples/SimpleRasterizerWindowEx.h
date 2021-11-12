@@ -24,9 +24,6 @@ private:
     std::unique_ptr<ImGuiRenderer> imguiRenderer;
 
     vk::Semaphore imgToImGuiSemaphore;
-
-    std::vector<ImTextureID> textures;
-
 };
 
 

@@ -6,6 +6,7 @@
 ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int width, int height, int imagesInFlight)
         : context(std::move(context)) {
     createComputeImages(width, height, imagesInFlight);
+    createUniformBuffer();
     createDescriptorSetLayout();
     createComputePipeline();
     createCommandPool(imagesInFlight);
@@ -31,6 +32,7 @@ ComputeRenderer::~ComputeRenderer() {
         context->getDevice()->getVkDevice().destroySampler(allocatedImage.sampler);
         vmaDestroyImage(context->getAllocator(), allocatedImage.image, allocatedImage.allocation);
     }
+    vmaDestroyBuffer(context->getAllocator(), uniformBuffer.buffer, uniformBuffer.allocation);
 }
 
 RecordedCommandBuffer ComputeRenderer::recordCommandBuffer() {
@@ -80,6 +82,7 @@ void ComputeRenderer::resizeImage(int width, int height) {
     }
     images.clear();
     createComputeImages(width, height, imagesInFlight);
+    updateUniformBuffer();
     updateDescriptorSets(imagesInFlight);
 }
 
@@ -90,7 +93,6 @@ void ComputeRenderer::resizeImage(int width, int height) {
 // ==================
 
 void ComputeRenderer::createComputeImages(int width, int height, int imagesInFlight) {
-
     for (int i = 0; i < imagesInFlight; i++) {
         VmaAllocation allocation;
         vk::Image image;
@@ -177,12 +179,44 @@ void ComputeRenderer::createComputeImages(int width, int height, int imagesInFli
     }
 }
 
+
+void ComputeRenderer::createUniformBuffer() {
+    vk::BufferCreateInfo createInfo{
+            {},
+            sizeof(UniformCamObj),
+            vk::BufferUsageFlagBits::eUniformBuffer,
+            {}, nullptr
+    };
+
+    VmaAllocationCreateInfo allocationInfo{};
+    allocationInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+    vmaCreateBuffer(
+            context->getAllocator(),
+            reinterpret_cast<const VkBufferCreateInfo *>(&createInfo),
+            &allocationInfo,
+            reinterpret_cast<VkBuffer *>(&uniformBuffer.buffer),
+            &uniformBuffer.allocation,
+            nullptr
+    );
+    updateUniformBuffer();
+}
+
+
 void ComputeRenderer::createDescriptorSetLayout() {
     std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings{
-            vk::DescriptorSetLayoutBinding{0,
-                                           vk::DescriptorType::eStorageImage,
-                                           1,
-                                           vk::ShaderStageFlagBits::eCompute}
+            vk::DescriptorSetLayoutBinding{
+                    0,
+                    vk::DescriptorType::eStorageImage,
+                    1,
+                    vk::ShaderStageFlagBits::eCompute
+            },
+            vk::DescriptorSetLayoutBinding{
+                    1,
+                    vk::DescriptorType::eUniformBuffer,
+                    1,
+                    vk::ShaderStageFlagBits::eCompute
+            }
     };
 
     vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{{}, setLayoutBindings};
@@ -229,9 +263,6 @@ void ComputeRenderer::createComputePipeline() {
 
 void ComputeRenderer::createCommandPool(int imagesInFlight) {
     for (int i = 0; i < imagesInFlight; ++i) {
-        /*commandPools.emplace_back(
-                context->getDevice()->getVkDevice().createCommandPool(
-                        vk::CommandPoolCreateInfo({}, context->getDevice()->getComputeQueueFamily())));*/
         commandPools.emplace_back(
                 context->getDevice()->getVkDevice().createCommandPool(
                         vk::CommandPoolCreateInfo({}, context->getDevice()->getGraphicsQueueFamily())));
@@ -269,13 +300,24 @@ void ComputeRenderer::updateDescriptorSets(int imagesInFlight) {
         auto image = images[i];
         vk::DescriptorImageInfo descriptorImageInfo(image.sampler, image.imageView, vk::ImageLayout::eGeneral);
 
-        vk::WriteDescriptorSet writeDescriptorSet(descriptorSets[i],
-                                                  0,
-                                                  {},
-                                                  vk::DescriptorType::eStorageImage,
-                                                  descriptorImageInfo);
+        std::vector<vk::WriteDescriptorSet> writeDescriptorSets{};
+        writeDescriptorSets.push_back(
+                {descriptorSets[i],
+                 0,
+                 {},
+                 vk::DescriptorType::eStorageImage,
+                 descriptorImageInfo}
+        );
 
-        context->getDevice()->getVkDevice().updateDescriptorSets(writeDescriptorSet, nullptr);
+        vk::DescriptorBufferInfo descriptorBufferInfo(uniformBuffer.buffer, {}, sizeof(UniformCamObj));
+        writeDescriptorSets.push_back({descriptorSets[i],
+                                       1,
+                                       {},
+                                       vk::DescriptorType::eUniformBuffer,
+                                       {}, descriptorBufferInfo}
+        );
+
+        context->getDevice()->getVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
     }
 }
 
@@ -287,6 +329,13 @@ void ComputeRenderer::createCommandBuffers(int imagesInFlight) {
     }
 
     semaphore = context->getDevice()->getVkDevice().createSemaphore(vk::SemaphoreCreateInfo());
+}
+
+void ComputeRenderer::updateUniformBuffer() {
+    void *data;
+    vmaMapMemory(context->getAllocator(), uniformBuffer.allocation, &data);
+    std::memcpy(data, &ubo, sizeof(UniformCamObj));
+    vmaUnmapMemory(context->getAllocator(), uniformBuffer.allocation);
 }
 
 

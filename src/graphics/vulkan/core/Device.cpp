@@ -3,8 +3,9 @@
 namespace vulkan {
 
     Device::Device(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface,
-                   const std::vector<std::tuple<std::string, bool>> &requiredExtensions)
-            : physicalDevice(physicalDevice) {
+                   const std::vector<std::tuple<std::string, bool>> &requiredExtensions,
+                   vk::PhysicalDeviceFeatures features,
+                   void* pNext) : physicalDevice(physicalDevice) {
 
         std::vector<const char *> extensions;
         for (auto &tuple : requiredExtensions) {
@@ -29,13 +30,8 @@ namespace vulkan {
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        vk::DeviceCreateInfo createInfo({},
-                                        queueCreateInfos.size(),
-                                        queueCreateInfos.data(),
-                                        0,
-                                        nullptr,
-                                        extensions.size(),
-                                        extensions.data());
+        vk::DeviceCreateInfo createInfo({}, queueCreateInfos, nullptr, extensions, &features);
+        createInfo.pNext = pNext;
 
         device = physicalDevice.createDevice(createInfo);
 

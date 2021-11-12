@@ -17,6 +17,7 @@ namespace windowing {
         };
         std::vector<std::tuple<std::string, bool>> deviceExtensions = {
                 //std::make_tuple("TESTTEST", false), Extension not optional and not available. will crash.
+                std::make_tuple(VK_KHR_SHADER_CLOCK_EXTENSION_NAME, false),
                 std::make_tuple(VK_KHR_SWAPCHAIN_EXTENSION_NAME, false),
                 std::make_tuple("OOF", true) // Extension optional
         };
@@ -28,7 +29,13 @@ namespace windowing {
             instanceExtensions.emplace_back(ex, false);
         }
 
-        context = std::make_shared<vulkan::Context>(instanceExtensions, validationLayers, deviceExtensions, window);
+        vk::PhysicalDeviceFeatures features{};
+        features.shaderInt64 = true;
+
+        vk::PhysicalDeviceShaderClockFeaturesKHR shaderClockFeatures{true};
+
+        context = std::make_shared<vulkan::Context>(instanceExtensions, validationLayers, deviceExtensions, features,
+                                                    &shaderClockFeatures, window);
 
         int width, height;
         glfwGetWindowSize(window, &width, &height);
@@ -40,11 +47,9 @@ namespace windowing {
         imagesInFlight.resize(swapchain->imageCount, VK_NULL_HANDLE);
 
         for (int i = 0; i < swapchain->imageCount; ++i) {
-
             commandPools.emplace_back(
                     context->getDevice()->getVkDevice().createCommandPool(
                             vk::CommandPoolCreateInfo({}, context->getDevice()->getGraphicsQueueFamily())));
-
         }
 
         commandBuffers.resize(swapchain->imageCount);
@@ -71,7 +76,7 @@ namespace windowing {
     }
 
     std::optional<uint32_t> VulkanWindow::acquireNextImage(vulkan::SyncObject syncObject) {
-        context->getDevice()->getVkDevice().waitForFences(1, &syncObject.fence, true, UINT64_MAX);
+        context->getDevice()->getVkDevice().waitForFences(syncObject.fence, true, UINT64_MAX);
 
         auto imageIndexResult = context->getDevice()->getVkDevice().acquireNextImageKHR(swapchain->swapchain,
                                                                                         UINT64_MAX,
@@ -90,7 +95,7 @@ namespace windowing {
         auto imageIndex = imageIndexResult.value;
 
         if (imagesInFlight[imageIndex]) {
-            context->getDevice()->getVkDevice().waitForFences(1, &imagesInFlight[imageIndex], true, UINT64_MAX);
+            context->getDevice()->getVkDevice().waitForFences(imagesInFlight[imageIndex], true, UINT64_MAX);
         }
 
         imagesInFlight[imageIndex] = syncObject.fence;

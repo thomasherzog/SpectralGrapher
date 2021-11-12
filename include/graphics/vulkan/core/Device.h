@@ -14,7 +14,9 @@ class vulkan::Device {
 
 public:
     Device(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface,
-           const std::vector<std::tuple<std::string, bool>> &requiredExtensions);
+           const std::vector<std::tuple<std::string, bool>> &requiredExtensions,
+           vk::PhysicalDeviceFeatures features,
+           void* pNext);
 
     ~Device();
 

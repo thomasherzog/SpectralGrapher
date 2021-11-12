@@ -10,10 +10,6 @@ SimpleRasterizerWindowEx::SimpleRasterizerWindowEx() {
     imguiRenderer = std::make_unique<ImGuiRenderer>(context, window, *swapchain);
     imgToImGuiSemaphore = context->getDevice()->getVkDevice().createSemaphore(vk::SemaphoreCreateInfo());
 
-    for (auto &image: computeRenderer->images) {
-        textures.push_back(ImGui_ImplVulkan_AddTexture(image.sampler, image.imageView, VK_IMAGE_LAYOUT_GENERAL));
-    }
-
     auto fs = cmrc::fonts::get_filesystem();
     auto font = fs.open("fonts/OpenSans-Regular.ttf");
     std::string fontMem{font.begin(), font.end()};
@@ -34,16 +30,10 @@ void SimpleRasterizerWindowEx::onSwapchainRebuild() {
     computeRenderer->resizeImage(swapchain->extent.width, swapchain->extent.height);
     imageRenderer->onSwapchainResize(*swapchain);
     imguiRenderer->onSwapchainRebuild(*swapchain);
-
-    textures.clear();
-    for (auto &image: computeRenderer->images) {
-        textures.push_back(ImGui_ImplVulkan_AddTexture(image.sampler, image.imageView, VK_IMAGE_LAYOUT_GENERAL));
-    }
 }
 
 void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t imageIndex) {
     context->getDevice()->getVkDevice().resetFences(syncObject.fence);
-
 
     // ComputeRenderer
     auto computeCmd = computeRenderer->recordCommandBuffer();
@@ -71,10 +61,27 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
         ImGui::Begin("Das ist der Titel des Windows");
 
         ImGui::Image(ImGui::GetIO().Fonts->TexID, ImVec2(100,100));
+        if(ImGui::IsItemHovered() && ImGui::GetIO().MouseWheel != 0) {
+            // TODO: wrong rotation
+            float factor = ImGui::GetIO().MouseWheel * 0.5f;
+            glm::vec3 camRot = computeRenderer->ubo.rotation;
+            glm::mat3x3 eulerTransform = glm::mat3x3(glm::eulerAngleXYZ(camRot.x, -camRot.y, -camRot.z));
+            glm::vec3 direction = glm::normalize(eulerTransform * glm::vec3(1,0,0));
+            computeRenderer->ubo.position += factor * direction;
+            computeRenderer->updateUniformBuffer();
+        }
 
         ImGui::Text("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam");
 
-        ImGui::Image(textures[imageIndex], ImVec2(300,300));
+        if(ImGui::DragFloat3("Position", (float*)&computeRenderer->ubo.position, 0.1f)){
+            computeRenderer->updateUniformBuffer();
+        }
+        if(ImGui::DragFloat3("Rotation", (float*)&computeRenderer->ubo.rotation, 0.1f)){
+            computeRenderer->updateUniformBuffer();
+        }
+        if(ImGui::DragFloat("FOV", &computeRenderer->ubo.fov, 0.1f)){
+            computeRenderer->updateUniformBuffer();
+        }
 
         ImGui::End();
     });

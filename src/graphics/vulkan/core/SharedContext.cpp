@@ -10,6 +10,8 @@ namespace vulkan {
     SharedContext::SharedContext(const std::vector<std::tuple<std::string, bool>> &instanceExtensions,
                                  const std::vector<std::string> &validationLayers,
                                  const std::vector<std::tuple<std::string, bool>> &deviceExtensions,
+                                 vk::PhysicalDeviceFeatures physicalDeviceFeatures,
+                                 void* devicePNext,
                                  GLFWwindow *window) {
 
         vk::DynamicLoader dynamicLoader;
@@ -26,7 +28,7 @@ namespace vulkan {
         auto physicalDevice = PhysicalDevice::enumerateSupportedDevices(instance->getInstance(),
                                                                         deviceExtensions);
 
-        device = std::make_shared<Device>(physicalDevice[0], surface->getSurface(), deviceExtensions);
+        device = std::make_shared<Device>(physicalDevice[0], surface->getSurface(), deviceExtensions, physicalDeviceFeatures, devicePNext);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(device->getVkDevice());
 
         VmaAllocatorCreateInfo allocatorCreateInfo{};

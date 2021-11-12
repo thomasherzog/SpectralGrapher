@@ -32,7 +32,6 @@ add_executable(SpectralGrapher
         src/renderer/ComputeRenderer.cpp
         src/renderer/SwapchainImageRenderer.cpp
         src/renderer/ImGuiRenderer.cpp
-
         )
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
