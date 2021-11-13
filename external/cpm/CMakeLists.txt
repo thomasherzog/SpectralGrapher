@@ -5,8 +5,11 @@ list(APPEND cpm_packages
         freetype
         vma
         implot
-        spirv-headers
-        glm)
+        glm
+        SPIRV-Headers
+        SPIRV-Tools
+        glslang
+        shaderc)
 
 include(CPM)
 
@@ -16,6 +19,5 @@ foreach (package IN LISTS cpm_packages)
     include(${CMAKE_CURRENT_SOURCE_DIR}/packages/${package}.cmake)
 endforeach ()
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
-        ${cpm_packages})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${cpm_packages})
 

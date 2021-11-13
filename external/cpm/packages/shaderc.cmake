@@ -1,0 +1,10 @@
+CPMAddPackage(
+        NAME shaderc
+        GITHUB_REPOSITORY google/shaderc
+        GIT_TAG dd79d052a1b757a1c57cb1cd71d120c17c7a5551
+        OPTIONS
+        "SHADERC_SKIP_TESTS ON"
+        "SHADERC_SKIP_INSTALL ON"
+        "SHADERC_SKIP_EXAMPLES ON"
+        "SHADERC_SKIP_COPYRIGHT_CHECK ON"
+)
