@@ -4,7 +4,7 @@ on: [ push, pull_request, workflow_dispatch ]
 
 env:
   sg_vulkan_sdk_version: "1.2.189.0"
-  sg_vulkan_sdk_path: "$GITHUB_WORKSPACE/../vulkan_sdk/"
+  sg_vulkan_sdk_path: "${{ github.workspace }}/vulkan_sdk"
 
 jobs:
   Linux:
@@ -15,22 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: "Linux Clang (Release)"
-            artifact: "SpectralGrapher-linux-clang-release"
-            cc: "clang"
-            cxx: "clang++"
-            cmake-build-type: "Release"
-
           - name: "Linux Clang (Debug)"
             artifact: "SpectralGrapher-linux-clang-debug"
             cc: "clang"
             cxx: "clang++"
-            cmake-build-type: "Debug"
-
-          - name: "Linux GCC (Release)"
-            artifact: "SpectralGrapher-linux-gcc-release"
-            cc: "gcc"
-            cxx: "g++"
             cmake-build-type: "Debug"
 
           - name: "Linux GCC (Debug)"
@@ -52,9 +40,18 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             cmake \
+            ninja-build \
             curl \
             xorg-dev \
             libvulkan-dev \
+
+      - name: Cache Vulkan SDK
+        id: cache-vk
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.sg_vulkan_sdk_path }}
+          key: linux-vulkan-sdk-${{ env.sg_vulkan_sdk_version }}
 
       - name: Install Vulkan SDK
         shell: bash
@@ -63,6 +60,15 @@ jobs:
             https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/linux/vulkansdk-linux-x86_64-${{ env.sg_vulkan_sdk_version }}.tar.gz
           mkdir "${{ env.sg_vulkan_sdk_path }}"
           tar xfz vulkansdk.tar.gz -C "${{ env.sg_vulkan_sdk_path }}"
+        if: steps.cache-vk.outputs.cache-hit != 'true'
+
+      - name: Cache CMake configuration
+        id: cache-cmake
+        uses: actions/cache@v2
+        with:
+          path: |
+            bin/release
+          key: cmake-${{ matrix.config.artifact }}
 
       - name: Configure CMake
         shell: bash
@@ -73,7 +79,7 @@ jobs:
           export PATH=$VULKAN_SDK/bin:$PATH
           export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
           export VK_LAYER_PATH=$VULKAN_SDK/etc/explicit_layer.d
-          cmake -S . -B bin/release -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}}
+          cmake -S . -B bin/release -G Ninja -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}}
 
       - name: Build SpectralGrapher
         shell: bash
@@ -96,32 +102,16 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: "Windows MSVC (Release)"
-            artifact: "SpectralGrapher-windows-msvc-release"
-            cc: "cl"
-            cxx: "cl"
-            cmake-generator: "Visual Studio 16 2019"
-            cmake-build-type: "Release"
-
           - name: "Windows MSVC (Debug)"
             artifact: "SpectralGrapher-windows-msvc-debug"
             cc: "cl"
             cxx: "cl"
-            cmake-generator: "Visual Studio 16 2019"
             cmake-build-type: "Debug"
-
-          - name: "Windows MinGW (Release)"
-            artifact: "SpectralGrapher-windows-mingw-release"
-            cc: "gcc"
-            cxx: "g++"
-            cmake-generator: "MinGW Makefiles"
-            cmake-build-type: "Release"
 
           - name: "Windows MinGW (Debug)"
             artifact: "SpectralGrapher-windows-mingw-debug"
             cc: "gcc"
             cxx: "g++"
-            cmake-generator: "MinGW Makefiles"
             cmake-build-type: "Debug"
 
     steps:
@@ -130,23 +120,49 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Initialize environment
+        shell: cmd
+        run: |
+          choco install ninja
+
+      - name: Setup MSBuild
+        uses: ilammy/msvc-dev-cmd@v1
+        if: ${{matrix.config.cc}} == 'cl'
+
+      - name: Cache Vulkan SDK
+        id: cache-vk
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{env.sg_vulkan_sdk_path}}/${{env.sg_vulkan_sdk_version}}
+          key: windows-vulkan-sdk-${{ env.sg_vulkan_sdk_version }}
+
       - name: Install Vulkan SDK
         shell: cmd
         run: |
           curl --url "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-Installer.exe" -o "VulkanSDK.exe"
-          7z x -aoa VulkanSDK.exe -oC:\\VulkanSDK\\${{env.sg_vulkan_sdk_version}}
+          7z x -aoa VulkanSDK.exe -o${{env.sg_vulkan_sdk_path}}/${{env.sg_vulkan_sdk_version}}
           curl --url "https://sdk.lunarg.com/sdk/download/${{ env.sg_vulkan_sdk_version }}/windows/VulkanSDK-${{ env.sg_vulkan_sdk_version }}-DebugLibs.zip" -o "DebugLibs.zip"
-          7z x -aoa DebugLibs.zip -oC:\\VulkanSDK\\${{env.sg_vulkan_sdk_version}}
+          7z x -aoa DebugLibs.zip -o${{env.sg_vulkan_sdk_path}}/${{env.sg_vulkan_sdk_version}}
+        if: steps.cache-vk.outputs.cache-hit != 'true'
+
+      - name: Cache CMake configuration
+        id: cache-cmake
+        uses: actions/cache@v2
+        with:
+          path: |
+            bin/release
+          key: cmake-${{ matrix.config.artifact }}
 
       - name: Configure CMake
         shell: powershell
         run: |
           $Env:CC = "${{ matrix.config.cc }}"
           $Env:CXX = "${{ matrix.config.cxx }}"
-          $Env:VULKAN_SDK = "C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}"
-          $Env:Path += ";C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}/Bin"
-          $Env:LD_LIBRARY_PATH += ";C:/VulkanSDK/${{ env.sg_vulkan_sdk_version }}/Lib";
-          cmake -S . -B ${{github.workspace}}/bin/release -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}} -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "${{matrix.config.cmake-generator}}" -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}}
+          $Env:VULKAN_SDK = "${{env.sg_vulkan_sdk_path}}/${{ env.sg_vulkan_sdk_version }}"
+          $Env:Path += ";${{env.sg_vulkan_sdk_path}}/${{ env.sg_vulkan_sdk_version }}/Bin"
+          $Env:LD_LIBRARY_PATH += ";${{env.sg_vulkan_sdk_path}}/${{ env.sg_vulkan_sdk_version }}/Lib";
+          cmake -S . -B ${{github.workspace}}/bin/release -G Ninja -D CMAKE_BUILD_TYPE=${{matrix.config.cmake-build-type}} -DCMAKE_DEPENDS_USE_COMPILER=FALSE -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}}
 
       - name: Build SpectralGrapher
         shell: powershell
