@@ -2,6 +2,11 @@
 
 #include <fstream>
 #include <utility>
+#include <shaderc/shaderc.hpp>
+
+#include <cmrc/cmrc.hpp>
+
+CMRC_DECLARE(shaders);
 
 ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int width, int height, int imagesInFlight)
         : context(std::move(context)) {
@@ -224,22 +229,25 @@ void ComputeRenderer::createDescriptorSetLayout() {
 }
 
 void ComputeRenderer::createComputePipeline() {
-    std::ifstream file("test.comp.spv", std::ios::ate | std::ios::binary);
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file!");
+    auto fs = cmrc::shaders::get_filesystem();
+    auto shaderResource = fs.open("shaders/compute/test.comp");
+    std::string shaderSource{shaderResource.begin(), shaderResource.end()};
+    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
+            shaderSource,
+            shaderc_glsl_compute_shader,
+            "name",
+            options
+    );
+    if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+        std::cerr << result.GetErrorMessage();
     }
-
-    size_t fileSize = (size_t) file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    file.close();
-
+    std::vector<uint32_t> spirv{result.begin(), result.end()};
     vk::ShaderModule shaderModule = context->getDevice()->getVkDevice().createShaderModule(vk::ShaderModuleCreateInfo{
-            {}, buffer.size(), reinterpret_cast<const uint32_t *>(buffer.data())
+            {}, spirv.size() * sizeof(uint32_t), spirv.data()
     });
 
     vk::PipelineShaderStageCreateInfo shaderStageCreateInfo{

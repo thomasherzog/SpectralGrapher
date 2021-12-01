@@ -1,0 +1,13 @@
+#ifndef SPECTRALGRAPHER_SHADERCOMPILER_H
+#define SPECTRALGRAPHER_SHADERCOMPILER_H
+
+
+class ShaderCompiler {
+public:
+
+private:
+
+};
+
+
+#endif //SPECTRALGRAPHER_SHADERCOMPILER_H

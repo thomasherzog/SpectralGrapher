@@ -101,7 +101,7 @@ void main() {
 
     imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(color, 0.0));
 
-    if (pixCo.x == 25 || pixCo.y == 25 || pixCo.x == imgSize.x - 25 || pixCo.y == imgSize.y - 25) {
+    if (pixCo.y == 27 || (pixCo.x == imgSize.x - 150 && pixCo.y < 27) || (pixCo.x == 40 && pixCo.y < 27) ) {
         imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(1.0, 1.0, 0.0, 0.0));
     }
 }

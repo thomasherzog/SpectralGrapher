@@ -8,4 +8,8 @@ add_subdirectory(cpm)
 target_link_libraries(${PROJECT_NAME} PUBLIC
         Vulkan::Vulkan
         imgui
-        imgui_impl)
+        imgui_impl
+        comctl32.lib
+        dwmapi.lib
+        Uxtheme.lib
+        Gdi32.lib)

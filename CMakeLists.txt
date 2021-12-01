@@ -27,11 +27,15 @@ add_executable(SpectralGrapher
 
         src/examples/TestImWindow.cpp
         src/examples/SimpleRasterizerWindowEx.cpp
+        src/examples/CustomTitlebarWindowEx.cpp
 
         src/renderer/RecordedCommandBuffer.cpp
         src/renderer/ComputeRenderer.cpp
         src/renderer/SwapchainImageRenderer.cpp
         src/renderer/ImGuiRenderer.cpp
+
+        src/shader/ShaderCompiler.cpp
+        src/native/Win32CustomTitlebar.cpp
         )
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)

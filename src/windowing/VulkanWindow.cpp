@@ -140,6 +140,12 @@ namespace windowing {
     }
 
     void VulkanWindow::onWindowRender() {
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(window, &width, &height);
+        if (width == 0 && height == 0) {
+            return;
+        }
+
         auto syncObject = inFlightFrames->getNextSyncObject();
         std::optional<uint32_t> imageIndex = acquireNextImage(syncObject);
         if (imageIndex.has_value()) {

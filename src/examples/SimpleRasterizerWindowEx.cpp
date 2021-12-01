@@ -1,7 +1,9 @@
 #include "examples/SimpleRasterizerWindowEx.h"
 #include <fstream>
+#include <imgui_internal.h>
 
 #include <cmrc/cmrc.hpp>
+
 CMRC_DECLARE(fonts);
 
 SimpleRasterizerWindowEx::SimpleRasterizerWindowEx() {
@@ -14,6 +16,22 @@ SimpleRasterizerWindowEx::SimpleRasterizerWindowEx() {
     auto font = fs.open("fonts/OpenSans-Regular.ttf");
     std::string fontMem{font.begin(), font.end()};
     auto openSansFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem.data(), fontMem.size(), 16.0f);
+
+    auto font2 = fs.open("fonts/segoe-mdl2-assets.ttf");
+    std::string fontMem2{font2.begin(), font2.end()};
+    ImVector<ImWchar> ranges;
+    ImFontGlyphRangesBuilder builder;
+    ImFontConfig cfg;
+    cfg.MergeMode = true;
+
+    builder.AddChar(0xE949);
+    builder.AddChar(0xE739);
+    builder.AddChar(0xE923);
+    builder.AddChar(0xE106);
+    builder.BuildRanges(&ranges);
+    auto winFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem2.data(), fontMem2.size(), 10.0f, &cfg,
+                                                              ranges.Data);
+
     ImGui::GetIO().FontDefault = openSansFont;
     context->executeTransient([](VkCommandBuffer commandBuffer) {
         return ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
@@ -52,24 +70,72 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
                             imgToImGuiSemaphore,
                             nullptr);
 
-
     // ImGuiRenderer
     pipelineStageFlags = {vk::PipelineStageFlagBits::eFragmentShader};
     semaphores = {imgToImGuiSemaphore};
 
     imguiRenderer->declareUserInterface([this, &imageIndex]() {
-        ImGui::Begin("Das ist der Titel des Windows");
 
-        ImGui::Image(ImGui::GetIO().Fonts->TexID, ImVec2(100, 100));
-        if (ImGui::IsItemHovered() && ImGui::GetIO().MouseWheel != 0) {
-            // TODO: wrong rotation
-            float factor = ImGui::GetIO().MouseWheel * 0.5f;
-            glm::vec3 camRot = computeRenderer->ubo.rotation;
-            glm::mat3x3 eulerTransform = glm::mat3x3(glm::eulerAngleXYZ(camRot.x, -camRot.y, -camRot.z));
-            glm::vec3 direction = glm::normalize(eulerTransform * glm::vec3(1, 0, 0));
-            computeRenderer->ubo.position += factor * direction;
-            computeRenderer->updateUniformBuffer();
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 6));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 11));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        if (ImGui::BeginMainMenuBar()) {
+
+            ImGui::SetCursorPos(ImVec2(0, 0));
+            ImGui::Button("X", ImVec2(30, 28));
+
+            if (ImGui::BeginMenu("File")) {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit")) {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Window")) {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Help")) {
+                ImGui::EndMenu();
+            }
+
+            ImVec2 size = ImVec2(50, 0);
+            ImGui::SetCursorPos(ImVec2(ImGui::GetIO().DisplaySize.x - size.x - 100, 0));
+
+            ImGui::Button(u8"\uE949", ImVec2(50, 28));
+
+            ImGui::SetCursorPos(ImVec2(ImGui::GetIO().DisplaySize.x - size.x - 50, 0));
+            if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED)) {
+                ImGui::Button(u8"\uE923", ImVec2(50, 28));
+            } else {
+                ImGui::Button(u8"\uE739", ImVec2(50, 28));
+            }
+
+            ImGui::GetIO().Fonts->Fonts.Data[2];
+            ImGui::SetCursorPos(ImVec2(ImGui::GetIO().DisplaySize.x - size.x, 0));
+            ImGui::Button(u8"\uE106", ImVec2(50, 28));
+
+            ImGui::EndMainMenuBar();
         }
+        ImGui::PopStyleVar(3);
+
+
+        if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", nullptr, ImGuiDir_Up, 30, 0)) {
+            if (ImGui::BeginMenuBar()) {
+                ImGui::Text("Happy secondary menu bar");
+                ImGui::EndMenuBar();
+            }
+            ImGui::End();
+        }
+
+        if (ImGui::BeginViewportSideBar("##MainStatusBar", nullptr, ImGuiDir_Down, 30, 0)) {
+            if (ImGui::BeginMenuBar()) {
+                ImGui::Text("Happy status bar");
+                ImGui::EndMenuBar();
+            }
+            ImGui::End();
+        }
+
+
+        ImGui::Begin("Das ist der Titel des Windows");
 
         ImGui::Text("Lorem ipsum dolor sit amet");
 
@@ -84,6 +150,8 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
         }
 
         ImGui::End();
+
+        ImGui::ShowDemoWindow();
     });
 
     auto imguiRendererCmd = imguiRenderer->recordCommandBuffer(*swapchain, imageIndex);

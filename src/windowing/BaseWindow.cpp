@@ -9,6 +9,7 @@ namespace windowing {
             glfwWindowHint(std::get<0>(hint), std::get<1>(hint));
         }
         window = glfwCreateWindow(1920, 1080, title.c_str(), nullptr, nullptr);
+        titlebar = std::make_unique<Win32CustomTitlebar>(window);
     }
 
     void BaseWindow::renderWindow() {
