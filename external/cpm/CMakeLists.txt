@@ -5,6 +5,7 @@ list(APPEND cpm_packages
         freetype
         vma
         implot
+        imgui-node-editor
         glm
         SPIRV-Headers
         SPIRV-Tools

@@ -16,7 +16,7 @@ public:
 
     void onSwapchainResize(vulkan::Swapchain &swapchain);
 
-    void updateDescriptorSet(AllocatedImage image,int imageIndex);
+    void updateDescriptorSet(AllocatedImage image, int imageIndex);
 
 private:
     std::shared_ptr<vulkan::Context> context;

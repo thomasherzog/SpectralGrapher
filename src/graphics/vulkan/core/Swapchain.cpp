@@ -142,7 +142,7 @@ namespace vulkan {
 
     vk::PresentModeKHR SwapchainSupportDetails::getOptimalPresentMode() {
         for (const auto &presentMode: presentModes) {
-            if (presentMode == vk::PresentModeKHR::eFifoRelaxed) {
+            if (presentMode == vk::PresentModeKHR::eMailbox) {
                 return presentMode;
             }
         }

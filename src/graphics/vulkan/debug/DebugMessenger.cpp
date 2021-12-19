@@ -5,8 +5,7 @@
 namespace vulkan {
 
     DebugMessenger::DebugMessenger(vk::Instance instance) {
-        auto createInfo = getCreateInfo();
-        instance.createDebugUtilsMessengerEXT(&createInfo, nullptr, &debugMessenger);
+        debugMessenger = instance.createDebugUtilsMessengerEXT(getCreateInfo());
     }
 
     void DebugMessenger::destroy(vk::Instance instance) {

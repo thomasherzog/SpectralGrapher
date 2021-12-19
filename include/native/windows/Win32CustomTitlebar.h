@@ -10,6 +10,7 @@
 #include <Uxtheme.h>
 #include <vssym32.h>
 #include <wingdi.h>
+#include <windowsx.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 
@@ -24,7 +25,11 @@ public:
 
     static LRESULT getBorderlessHitTest(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+    static LRESULT getWmNcCalcSize(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 private:
+    GLFWwindow* window;
+
 
 };
 

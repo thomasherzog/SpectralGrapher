@@ -8,18 +8,14 @@ namespace windowing {
         }
 
         std::vector<std::tuple<std::string, bool>> instanceExtensions = {
-                //std::make_tuple("TESTTEST", false), Extension not optional and not available. will crash.
-                std::make_tuple("OOF", true) // Extension optional
+                std::make_tuple("OOF", true)
         };
         const std::vector<std::string> validationLayers = {
                 "VK_LAYER_KHRONOS_validation",
-                //"VK_LAYER_LUNARG_standard_validation"
         };
         std::vector<std::tuple<std::string, bool>> deviceExtensions = {
-                //std::make_tuple("TESTTEST", false), Extension not optional and not available. will crash.
                 std::make_tuple(VK_KHR_SHADER_CLOCK_EXTENSION_NAME, false),
                 std::make_tuple(VK_KHR_SWAPCHAIN_EXTENSION_NAME, false),
-                std::make_tuple("OOF", true) // Extension optional
         };
 
         uint32_t extensions_count = 0;
@@ -59,7 +55,11 @@ namespace windowing {
         }
 
         glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int, int) {
+        glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width, int height) {
+            static_cast<VulkanWindow *>(glfwGetWindowUserPointer(window))->recreateSwapchain();
+            static_cast<VulkanWindow *>(glfwGetWindowUserPointer(window))->onWindowRender();
+        });
+        glfwSetWindowPosCallback(window, [](GLFWwindow *window, int x, int y) {
             static_cast<VulkanWindow *>(glfwGetWindowUserPointer(window))->onWindowRender();
         });
 
@@ -68,7 +68,7 @@ namespace windowing {
     VulkanWindow::~VulkanWindow() {
         context->getDevice()->getVkDevice().waitIdle();
 
-        for (auto commandPool: commandPools) {
+        for (auto& commandPool: commandPools) {
             context->getDevice()->getVkDevice().destroyCommandPool(commandPool);
         }
 
@@ -78,11 +78,16 @@ namespace windowing {
     std::optional<uint32_t> VulkanWindow::acquireNextImage(vulkan::SyncObject syncObject) {
         context->getDevice()->getVkDevice().waitForFences(syncObject.fence, true, UINT64_MAX);
 
-        auto imageIndexResult = context->getDevice()->getVkDevice().acquireNextImageKHR(swapchain->swapchain,
-                                                                                        UINT64_MAX,
-                                                                                        syncObject.imageAvailableSemaphore,
-                                                                                        nullptr);
-        switch (imageIndexResult.result) {
+        vk::ResultValue<uint32_t> result{vk::Result::eNotReady, uint32_t{0}};
+        try {
+            result = context->getDevice()->getVkDevice().acquireNextImageKHR(swapchain->swapchain,
+                                                                             UINT64_MAX,
+                                                                             syncObject.imageAvailableSemaphore,
+                                                                             nullptr);
+        } catch (vk::OutOfDateKHRError &) {
+            result = vk::ResultValue<uint32_t>{vk::Result::eErrorOutOfDateKHR, uint32_t{0}};
+        }
+        switch (result.result) {
             case vk::Result::eSuccess:
             case vk::Result::eSuboptimalKHR:
                 break;
@@ -92,7 +97,7 @@ namespace windowing {
             default:
                 throw std::runtime_error("Swap chain image acquisition failed");
         }
-        auto imageIndex = imageIndexResult.value;
+        auto imageIndex = result.value;
 
         if (imagesInFlight[imageIndex]) {
             context->getDevice()->getVkDevice().waitForFences(imagesInFlight[imageIndex], true, UINT64_MAX);
@@ -140,12 +145,6 @@ namespace windowing {
     }
 
     void VulkanWindow::onWindowRender() {
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(window, &width, &height);
-        if (width == 0 && height == 0) {
-            return;
-        }
-
         auto syncObject = inFlightFrames->getNextSyncObject();
         std::optional<uint32_t> imageIndex = acquireNextImage(syncObject);
         if (imageIndex.has_value()) {

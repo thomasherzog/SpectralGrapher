@@ -112,7 +112,7 @@ RecordedCommandBuffer ImGuiRenderer::recordCommandBuffer(vulkan::Swapchain &swap
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
-    return {context, commandBuffer};
+    return {context->getDevice()->getGraphicsQueue(), commandBuffer};
 }
 
 void ImGuiRenderer::createCommandPools(int imagesInFlight) {
@@ -139,7 +139,7 @@ void ImGuiRenderer::createRenderPass(vulkan::Swapchain &swapchain) {
                                                     vk::AttachmentStoreOp::eStore,
                                                     vk::AttachmentLoadOp::eDontCare,
                                                     vk::AttachmentStoreOp::eDontCare,
-                                                    vk::ImageLayout::ePresentSrcKHR,
+                                                    vk::ImageLayout::eGeneral,
                                                     vk::ImageLayout::ePresentSrcKHR);
 
     vk::AttachmentReference attachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);

@@ -20,10 +20,27 @@ struct AllocatedBuffer {
     vk::Buffer buffer;
 };
 
+struct Sphere {
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+    float radius = 1.0f;
+};
+
+struct Mandelbulb {
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+    float power = 8.0f;
+};
+
 struct UniformCamObj {
-    alignas(16) glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+    alignas(16) glm::vec3 position = glm::vec3(-2.0f, 0.0f, 0.0f);
     alignas(16) glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-    alignas(4) float fov = 0.0f;
+    alignas(4) float fov = 1.0f;
+    alignas(4) int sampleCount = 1;
+    alignas(4) int sampleIndex = 0;
+    alignas(4) float epsilon = 0.001;
+    alignas(4) int maxTime = 7;
+    alignas(4) int maxSteps = 200;
+    alignas(16) glm::vec3 backgroundColor = glm::vec3(0.0f, 0.0f, 0.0f);
+    alignas(4) float power = 8.0f;
 };
 
 class ComputeRenderer {
@@ -37,13 +54,14 @@ public:
 
     void resizeImage(int width, int height);
 
-    void updateDescriptorSets(int imagesInFlight);
+    void updateDescriptorSets();
 
     void updateUniformBuffer();
 
-    int imageIndex;
+    int imageIndex{-1};
+    int framesInFlight;
 
-    std::vector<AllocatedImage> images;
+    AllocatedImage accumulationImage;
 
     vk::Semaphore semaphore;
 
@@ -51,6 +69,14 @@ public:
 
     AllocatedBuffer uniformBuffer;
     UniformCamObj ubo;
+
+    std::vector<Sphere> spheres;
+    std::vector<Mandelbulb> mandelbulbs;
+
+    AllocatedBuffer sphereBuffer;
+    AllocatedBuffer mandelbulbBuffer;
+    vk::DescriptorSetLayout objectDSL;
+    std::vector<vk::DescriptorSet> descriptorSetsObj;
 
 private:
     std::shared_ptr<vulkan::Context> context;
@@ -67,7 +93,7 @@ private:
 
     std::vector<vk::DescriptorSet> descriptorSets;
 
-    void createComputeImages(int width, int height, int imagesInFlight);
+    void createComputeImage(int width, int height);
 
     void createUniformBuffer();
 
@@ -75,13 +101,13 @@ private:
 
     void createComputePipeline();
 
-    void createCommandPool(int imagesInFlight);
+    void createCommandPool();
 
     void createDescriptorPool();
 
-    void createDescriptorSets(int imagesInFlight);
+    void createDescriptorSets();
 
-    void createCommandBuffers(int imagesInFlight);
+    void createCommandBuffers();
 
 };
 

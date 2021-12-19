@@ -20,7 +20,7 @@ SwapchainImageRenderer::~SwapchainImageRenderer() {
         context->getDevice()->getVkDevice().freeCommandBuffers(commandPools[i], commandBuffers[i]);
         context->getDevice()->getVkDevice().destroyCommandPool(commandPools[i]);
     }
-    for(auto descriptorPool : descriptorPools) {
+    for(auto &descriptorPool : descriptorPools) {
         context->getDevice()->getVkDevice().destroyDescriptorPool(descriptorPool);
     }
     context->getDevice()->getVkDevice().destroyPipeline(pipeline);
@@ -43,36 +43,12 @@ RecordedCommandBuffer SwapchainImageRenderer::recordCommandBuffer(vulkan::Swapch
 
     commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
-    vk::ImageMemoryBarrier imageMemoryBarrier{
-            vk::AccessFlagBits::eShaderWrite,
-            vk::AccessFlagBits::eShaderRead,
-            vk::ImageLayout::eGeneral,
-            vk::ImageLayout::eGeneral,
-            {},
-            {},
-            image.image,
-            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
-    };
-    commandBuffer.pipelineBarrier(
-            vk::PipelineStageFlagBits::eComputeShader,
-            vk::PipelineStageFlagBits::eFragmentShader,
-            {},
-            nullptr,
-            nullptr,
-            imageMemoryBarrier
-    );
-
-    vk::ClearValue clearValue{};
-    clearValue.color = std::array<float, 4>{1.0f, 0.0f, 1.0f, 1.0f};
-
     vk::RenderPassBeginInfo renderPassBeginInfo{};
     renderPassBeginInfo.renderPass = renderPass;
     renderPassBeginInfo.renderArea.offset.x = 0;
     renderPassBeginInfo.renderArea.offset.y = 0;
     renderPassBeginInfo.renderArea.extent.width = swapchain.extent.width;
     renderPassBeginInfo.renderArea.extent.height = swapchain.extent.height;
-    renderPassBeginInfo.clearValueCount = 1;
-    renderPassBeginInfo.pClearValues = &clearValue;
     renderPassBeginInfo.framebuffer = framebuffers[imageIndex];
 
     commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
@@ -100,7 +76,7 @@ RecordedCommandBuffer SwapchainImageRenderer::recordCommandBuffer(vulkan::Swapch
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
-    return {context, commandBuffer};
+    return {context->getDevice()->getGraphicsQueue(), commandBuffer};
 }
 
 
@@ -115,7 +91,7 @@ void SwapchainImageRenderer::onSwapchainResize(vulkan::Swapchain &swapchain) {
 }
 
 void SwapchainImageRenderer::updateDescriptorSet(AllocatedImage image, int imageIndex) {
-    vk::DescriptorImageInfo descriptorImageInfo(image.sampler, image.imageView, vk::ImageLayout::eGeneral);
+    vk::DescriptorImageInfo descriptorImageInfo(image.sampler, image.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     vk::WriteDescriptorSet writeDescriptorSet(descriptorSets[imageIndex],
                                               0,
@@ -152,8 +128,7 @@ void SwapchainImageRenderer::createRenderPass(vulkan::Swapchain &swapchain) {
                                                     vk::AttachmentLoadOp::eDontCare,
                                                     vk::AttachmentStoreOp::eDontCare,
                                                     vk::ImageLayout::eUndefined,
-                                                    vk::ImageLayout::ePresentSrcKHR);
-
+                                                    vk::ImageLayout::eGeneral);
 
     vk::AttachmentReference attachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
 
@@ -225,7 +200,6 @@ void SwapchainImageRenderer::createDescriptorSets() {
         vk::DescriptorSetAllocateInfo allocateInfo{descriptorPools[i], descriptorSetLayout};
         descriptorSets.push_back(context->getDevice()->getVkDevice().allocateDescriptorSets(allocateInfo).at(0));
     }
-
 }
 
 

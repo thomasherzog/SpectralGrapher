@@ -1,0 +1,255 @@
+#version 460
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (binding = 0, rgba8) uniform image2D accumulativeImage;
+
+layout (binding = 1) uniform UniformBufferObject {
+    vec3 position;
+    vec3 rotation;
+    float fov;
+
+    int sampleCount;
+    int sampleIndex;
+
+    float epsilon;
+
+    int maxTime;
+    int maxSteps;
+
+    vec3 backgroundColor;
+    
+    float power;
+} ubo;
+
+
+struct SDFShape {
+    int type;
+};
+
+/*layout (std140, set = 1, binding = 0) readonly buffer ShapeBuffer {
+    Shape shapes[];
+} shapeBuffer;*/
+
+struct ShapeDistance {
+    int shapeType;
+    int shapeId;
+    float distance;
+};
+
+struct Sphere {
+    vec3 position;
+    float radius;
+};
+
+layout (std140, set = 1, binding = 0) readonly buffer SphereBuffer {
+    Sphere spheres[];
+} sphereBuffer;
+
+struct Mandelbulb {
+    vec3 position;
+    float power;
+};
+
+layout (std140, set = 1, binding = 1) readonly buffer MandelbulbBuffer {
+    Mandelbulb mandelbulbs[];
+} mandelbulbBuffer;
+
+struct Ray {
+    vec3 origin;
+    vec3 direction;
+};
+
+struct RayIntersection {
+    vec3 normal;
+    int shape;
+};
+
+mat3 getRotationMatrix(vec3 angles) {
+    vec2 x = vec2(cos(angles.x), sin(angles.x));
+    vec2 y = vec2(cos(angles.y), sin(angles.y));
+    vec2 z = vec2(cos(angles.z), sin(angles.z));
+
+    mat3 rot;
+    rot[0] = vec3(y.x * z.x, -y.x * z.y, y.y);
+    rot[1] = vec3(z.x * x.y * y.y + x.x * z.y,
+                  x.x * z.x - x.y * y.y * z.y,
+                  -y.x * x.y);
+    rot[2] = vec3(-x.x * z.x * y.y + x.y * z.y,
+                  z.x * x.y + x.x * y.y * z.y,
+                  x.x * y.x);
+
+    return rot;
+}
+
+Ray getRay(float u, float v, vec3 camPos, vec3 camRot, float camFOV) {
+    mat3 rotMat = getRotationMatrix(camRot);
+    vec3 viewDirection = rotMat * vec3(camFOV, 0, 0);
+    vec3 cameraRight = rotMat * vec3(0, 1, 0);
+    vec3 cameraUp = rotMat * vec3(0, 0, -1);
+    return Ray(camPos, normalize(viewDirection + cameraRight * u + cameraUp * v));
+}
+
+float getDistance_Mandelbulb(vec3 point, Mandelbulb mandelbulb) {
+    vec3 z = point;
+    float r = 0.0f;
+    float dr = 1.0f;
+
+    for(int i = 0; i < 20; i++){
+        r = length(z);
+        if(r > 2){
+            break;
+        }
+
+        float theta = acos(z.z / r);
+        float phi = atan(z.y / z.x);
+        float zr = pow(r, mandelbulb.power - 1);
+
+        dr = mandelbulb.power * zr * dr + 1.0f;
+
+        theta = theta * mandelbulb.power;
+        phi = phi * mandelbulb.power;
+
+        z = vec3(r*sin(theta) * cos(phi), r*sin(theta) * sin(phi), r*cos(theta));
+        z = z * zr + point;
+    }
+
+    return 0.5f * log(r) * r / dr;
+}
+
+float getDistance_Sphere(vec3 point, Sphere sphere) {
+    return length(point - sphere.position) - sphere.radius;
+}
+
+vec3 estimateNormal_Sphere(vec3 point, Sphere sphere) {
+    float distance = getDistance_Sphere(point, sphere);
+    return normalize(vec3(
+            getDistance_Sphere(point + vec3(ubo.epsilon, 0, 0), sphere) - distance,
+            getDistance_Sphere(point + vec3(0, ubo.epsilon, 0), sphere) - distance,
+            getDistance_Sphere(point + vec3(0, 0, ubo.epsilon), sphere) - distance
+    ));
+}
+
+vec3 estimateNormal_Mandelbulb(vec3 point, Mandelbulb mandelbulb) {
+    float distance = getDistance_Mandelbulb(point, mandelbulb);
+    return normalize(vec3(
+            getDistance_Mandelbulb(point + vec3(ubo.epsilon, 0, 0), mandelbulb) - distance,
+            getDistance_Mandelbulb(point + vec3(0, ubo.epsilon, 0), mandelbulb) - distance,
+            getDistance_Mandelbulb(point + vec3(0, 0, ubo.epsilon), mandelbulb) - distance
+    ));
+}
+
+vec3 getPointOnRay(Ray ray, float time) {
+    return ray.origin + ray.direction * time;
+}
+
+ShapeDistance getNearestDistance(vec3 point) {
+    float nearestTime = 9999999;
+    int shapeType = -1;
+    int shapeId = -1;
+
+    for(int i = 0; i < sphereBuffer.spheres.length(); i++) {
+        float distance = getDistance_Sphere(point, sphereBuffer.spheres[i]);
+        if (distance <= ubo.epsilon) {
+            return ShapeDistance(0, i, distance);
+        }
+        if(nearestTime > distance) {
+            nearestTime = distance;
+            shapeType = 0;
+            shapeId = i;
+        }
+    }
+    for(int i = 0; i < mandelbulbBuffer.mandelbulbs.length(); i++) {
+            float distance = getDistance_Mandelbulb(point, mandelbulbBuffer.mandelbulbs[i]);
+            if (distance <= ubo.epsilon) {
+                return ShapeDistance(1, i, distance);
+            }
+            if(nearestTime > distance) {
+                nearestTime = distance;
+                shapeType = 1;
+                shapeId = i;
+            }
+        }
+    return ShapeDistance(-1, shapeId, nearestTime);
+}
+
+RayIntersection traceRay(Ray ray) {
+    float time = 0;
+    int steps = 0;
+
+    while (ubo.maxSteps > steps && ubo.maxTime > time) {
+        vec3 point = getPointOnRay(ray, time);
+
+        ShapeDistance distance = getNearestDistance(point);
+        if (distance.distance <= ubo.epsilon) {
+            vec3 normal = vec3(0,0,0);
+            if(distance.shapeType == 0) {
+                normal = estimateNormal_Sphere(point, sphereBuffer.spheres[distance.shapeId]);
+            }else if(distance.shapeType == 1) {
+                normal = estimateNormal_Mandelbulb(point, mandelbulbBuffer.mandelbulbs[distance.shapeId]);
+            }
+            return RayIntersection(normal, 1);
+        }
+
+        time += distance.distance;
+        steps++;
+    }
+    return RayIntersection(vec3(0.0f, 0.0f, 0.0f), -1);
+}
+
+vec3 getNormalColor(RayIntersection inter) {
+    return vec3((inter.normal.x + 1.0f) * 0.5f,
+                (inter.normal.y + 1.0f) * 0.5f,
+                (inter.normal.z + 1.0f) * 0.5f);
+}
+
+float getHaltonSample(int index, int base){
+    float f = 1.0f;
+    float r = 0.0f;
+    float i = index;
+    while(i > 0){
+        f = f / base;
+        r = r + f * mod(i , float(base));
+        i = floor(i / base);
+    }
+    return r;
+}
+
+void main() {
+    vec2 pixCo = gl_GlobalInvocationID.xy;
+    ivec2 imgSize = imageSize(accumulativeImage);
+
+    if(pixCo.x > imgSize.x && pixCo.y > imgSize.y) {
+        return;
+    }
+
+    vec3 sampledColor = vec3(0.0f,0.0f,0.0f);
+    for(int s = 1; s <= ubo.sampleCount; s++) {
+            float u = 2.0f * ((pixCo.x + getHaltonSample(s*ubo.sampleIndex,2) + 0.5f) / float(imgSize.x)) - 1.0f;
+            float v = 1.0f - 2.0f * ((pixCo.y + getHaltonSample(s*ubo.sampleIndex,3) + 0.5f) / float(imgSize.y));
+
+            float aspectRatio = float(imgSize.y) / float(imgSize.x);
+            v = v * aspectRatio;
+
+            Ray ray = getRay(u, v, ubo.position.xyz, ubo.rotation.xyz, ubo.fov);
+            RayIntersection intersection = traceRay(ray);
+
+            vec3 color = vec3(0, 0, 0);
+            float factor = 0.0f;
+            if (intersection.shape != -1) {
+                factor = max(0.0f, dot(intersection.normal, -ray.direction));
+                color = factor * getNormalColor(intersection);
+            }else{
+                factor = 1.0f;
+                color = factor * ubo.backgroundColor;
+            }
+            sampledColor = (sampledColor * (float(s) - 1) + (factor * color)) * (1.0f / float(s));
+    }
+
+    vec4 accumulatedColor = imageLoad(accumulativeImage, ivec2(gl_GlobalInvocationID.xy));
+    vec4 resultColor = (accumulatedColor * ubo.sampleIndex + vec4(sampledColor,1.0f) * ubo.sampleCount) / (ubo.sampleIndex + ubo.sampleCount);
+    imageStore(accumulativeImage, ivec2(gl_GlobalInvocationID.xy), resultColor);
+}
+
+
+

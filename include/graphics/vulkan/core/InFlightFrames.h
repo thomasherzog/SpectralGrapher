@@ -11,7 +11,7 @@ namespace vulkan {
 
 class vulkan::InFlightFrames {
 public:
-    InFlightFrames(std::shared_ptr<Context> context, int maxFramesInFlight);
+    InFlightFrames(const std::shared_ptr<Context>& context, int maxFramesInFlight);
 
     ~InFlightFrames();
 
@@ -20,7 +20,7 @@ public:
 private:
     std::shared_ptr<Context> context;
 
-    int currentFrame = 0;
+    uint32_t currentFrame = 0;
 
     std::vector<vk::Semaphore> imageAvailableSemaphores;
 

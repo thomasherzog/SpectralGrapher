@@ -2,7 +2,7 @@
 
 namespace vulkan {
 
-    InFlightFrames::InFlightFrames(std::shared_ptr<Context> context, int maxFramesInFlight) : context(context) {
+    InFlightFrames::InFlightFrames(const std::shared_ptr<Context>& context, int maxFramesInFlight) : context(context) {
         imageAvailableSemaphores.resize(maxFramesInFlight);
         renderFinishedSemaphores.resize(maxFramesInFlight);
         fences.resize(maxFramesInFlight);

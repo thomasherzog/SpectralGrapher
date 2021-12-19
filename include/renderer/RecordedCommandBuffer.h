@@ -8,31 +8,31 @@
 
 class RecordedCommandBuffer {
 public:
-    RecordedCommandBuffer(std::shared_ptr<vulkan::Context> context, vk::CommandBuffer commandBuffer)
-            : context(std::move(context)), commandBuffer(commandBuffer) {
+    RecordedCommandBuffer(vk::Queue queue, vk::CommandBuffer commandBuffer)
+            : queue(queue), commandBuffer(commandBuffer) {
 
     }
 
     void submit(std::vector<vk::Semaphore> waitSemaphores,
                 std::vector<vk::PipelineStageFlags> waitDstStageMask,
-                vk::Semaphore signalSemaphore,
+                std::vector<vk::Semaphore> signalSemaphore,
                 vk::Fence fence) {
 
         vk::SubmitInfo submitInfo(
-                waitSemaphores, waitDstStageMask,
+                waitSemaphores,
+                waitDstStageMask,
                 commandBuffer,
                 signalSemaphore
         );
-        context->getDevice()->getGraphicsQueue().submit(submitInfo, fence);
+        queue.submit(submitInfo, fence);
     }
 
 private:
-    std::shared_ptr<vulkan::Context> context;
+    vk::Queue queue;
 
     vk::CommandBuffer commandBuffer;
 
 };
-
 
 
 #endif //SPECTRALGRAPHER_RECORDEDCOMMANDBUFFER_H

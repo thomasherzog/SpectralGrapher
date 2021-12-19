@@ -6,6 +6,10 @@
 #include "renderer/SwapchainImageRenderer.h"
 #include "renderer/ImGuiRenderer.h"
 
+#ifdef _WIN32
+#include "native/windows/Win32CustomTitlebar.h"
+#endif
+
 class SimpleRasterizerWindowEx : public windowing::VulkanWindow {
 public:
     SimpleRasterizerWindowEx();
@@ -24,6 +28,14 @@ private:
     std::unique_ptr<ImGuiRenderer> imguiRenderer;
 
     vk::Semaphore imgToImGuiSemaphore;
+
+    vk::Semaphore computeToSwapchainSemaphore;
+
+#ifdef _WIN32
+    Win32CustomTitlebar titlebar;
+#endif
+
+    ImTextureID imguiTexture;
 };
 
 

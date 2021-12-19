@@ -52,7 +52,6 @@ namespace windowing {
                 glfwMakeContextCurrent(windows[i]->getWindow());
                 windows[i]->renderWindow();
             }
-
             glfwPollEvents();
         }
     }

@@ -5,7 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 
-add_executable(SpectralGrapher
+set(source_files "")
+
+if (WIN32)
+    list(APPEND source_files
+            src/native/windows/Win32CustomTitlebar.cpp)
+endif ()
+
+list(APPEND source_files
         src/main.cpp
 
         src/graphics/vulkan/core/Context.cpp
@@ -23,20 +30,15 @@ add_executable(SpectralGrapher
         src/windowing/WindowManager.cpp
         src/windowing/BaseWindow.cpp
         src/windowing/VulkanWindow.cpp
-        src/windowing/ImGuiWindow.cpp
 
-        src/examples/TestImWindow.cpp
         src/examples/SimpleRasterizerWindowEx.cpp
-        src/examples/CustomTitlebarWindowEx.cpp
 
         src/renderer/RecordedCommandBuffer.cpp
         src/renderer/ComputeRenderer.cpp
         src/renderer/SwapchainImageRenderer.cpp
-        src/renderer/ImGuiRenderer.cpp
+        src/renderer/ImGuiRenderer.cpp)
 
-        src/shader/ShaderCompiler.cpp
-        src/native/Win32CustomTitlebar.cpp
-        )
+add_executable(SpectralGrapher ${source_files})
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
 add_subdirectory(external)
