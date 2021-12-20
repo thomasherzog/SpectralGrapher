@@ -20,6 +20,8 @@ public:
 
     void onSwapchainRebuild() override;
 
+    void initImGuiStyle();
+
 private:
     std::unique_ptr<ComputeRenderer> computeRenderer;
 
