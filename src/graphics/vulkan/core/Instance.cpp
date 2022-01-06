@@ -65,9 +65,18 @@ namespace vulkan {
             instanceCreateInfo.pNext = &debugCreateInfo;
         }
         instance = vk::createInstance(instanceCreateInfo);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+
+        if(!layers.empty()) {
+            debugMessenger = DebugMessenger(instance);
+        }
     }
 
     Instance::~Instance() {
+        if (debugMessenger.has_value()) {
+            debugMessenger->destroy(instance);
+            debugMessenger.reset();
+        }
         instance.destroy();
     }
 

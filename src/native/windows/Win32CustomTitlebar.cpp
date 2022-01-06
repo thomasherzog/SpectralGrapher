@@ -16,21 +16,11 @@ Win32CustomTitlebar::Win32CustomTitlebar(GLFWwindow *window) : window(window) {
 
 LRESULT CALLBACK Win32CustomTitlebar::myProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass,
                                              DWORD_PTR dwRefData) {
-    static HBRUSH brush;
-    static UINT resizeTimer;
-
     switch (uMsg) {
         case WM_ACTIVATE: {
             SetWindowPos(hwnd, hwnd, 0, 0, 0, 0,
                          SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-            brush = CreateSolidBrush(RGB(36, 36, 36));
-        }
-        case WM_ERASEBKGND: {
-            HDC hdc = (HDC) (wParam);
-            RECT rc;
-            GetClientRect(hwnd, &rc);
-            FillRect(hdc, &rc, brush);
-            return TRUE;
+            return DefSubclassProc(hwnd, uMsg, wParam, lParam);
         }
         case WM_NCCALCSIZE: {
             return getWmNcCalcSize(hwnd, uMsg, wParam, lParam);
@@ -42,30 +32,10 @@ LRESULT CALLBACK Win32CustomTitlebar::myProc(HWND hwnd, UINT uMsg, WPARAM wParam
             }
             return hit;
         }
-        case WM_ENTERSIZEMOVE: {
-            SetTimer(hwnd, resizeTimer, USER_TIMER_MINIMUM, nullptr);
-            return 0;
-        }
-        case WM_EXITSIZEMOVE: {
-            KillTimer(hwnd, resizeTimer);
-            return 0;
-        }
-        case WM_TIMER: {
-            glfwPostEmptyEvent();
-            auto *base = static_cast<windowing::BaseWindow *>(
-                    glfwGetWindowUserPointer(reinterpret_cast<Win32CustomTitlebar *>(dwRefData)->window)
-            );
-            base->renderWindow();
-            return 0;
-        }
-        case WM_DESTROY: {
-            DeleteObject(brush);
-        }
         default: {
             return DefSubclassProc(hwnd, uMsg, wParam, lParam);
         }
     }
-    return DefSubclassProc(hwnd, uMsg, wParam, lParam);
 }
 
 LRESULT Win32CustomTitlebar::getBorderlessHitTest(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -134,7 +104,7 @@ LRESULT Win32CustomTitlebar::getWmNcCalcSize(HWND hwnd, UINT uMsg, WPARAM wParam
         int frameBorderThickness = 8;
     } settings;
 
-    if (lParam) {
+    if (wParam) {
         auto *ncParams = reinterpret_cast<NCCALCSIZE_PARAMS *>(lParam);
         ncParams->rgrc[0].left += settings.frameBorderThickness;
         ncParams->rgrc[0].bottom -= settings.frameBorderThickness;

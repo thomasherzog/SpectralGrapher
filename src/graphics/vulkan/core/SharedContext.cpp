@@ -19,9 +19,6 @@ namespace vulkan {
         VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
         instance = std::make_shared<Instance>(instanceExtensions, validationLayers);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance->getInstance());
-
-        debugMessenger = DebugMessenger(instance->getInstance());
 
         surface = std::make_shared<Surface>(instance->getInstance(), window);
 
@@ -42,10 +39,6 @@ namespace vulkan {
         vmaDestroyAllocator(allocator);
         device.reset();
         surface->destroy(instance->getInstance());
-        if (debugMessenger.has_value()) {
-            debugMessenger->destroy(instance->getInstance());
-            debugMessenger.reset();
-        }
         instance.reset();
     }
 

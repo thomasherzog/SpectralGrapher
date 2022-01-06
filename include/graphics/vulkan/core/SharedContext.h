@@ -38,8 +38,6 @@ public:
 private:
     std::shared_ptr<Instance> instance;
 
-    std::optional<DebugMessenger> debugMessenger;
-
     std::shared_ptr<Surface> surface;
 
     std::shared_ptr<Device> device;

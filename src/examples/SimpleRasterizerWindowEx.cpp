@@ -7,11 +7,11 @@
 CMRC_DECLARE(fonts);
 
 SimpleRasterizerWindowEx::SimpleRasterizerWindowEx()
-#ifdef _WIN32
+#ifndef _WIN32
         : titlebar(window)
 #endif
 {
-    computeRenderer = std::make_unique<ComputeRenderer>(context, swapchain->extent.width, swapchain->extent.height, 3);
+    computeRenderer = std::make_unique<ComputeRenderer>(context, swapchain->extent.width, swapchain->extent.height, 2);
     imageRenderer = std::make_unique<SwapchainImageRenderer>(context, *swapchain);
     imguiRenderer = std::make_unique<ImGuiRenderer>(context, window, *swapchain);
 
@@ -30,6 +30,7 @@ SimpleRasterizerWindowEx::SimpleRasterizerWindowEx()
     ImFontConfig cfg;
     cfg.MergeMode = true;
 
+    builder.AddChar(0xE700); // "GlobalNavigationButton" button icon
     builder.AddChar(0xE106); // "Close window" button icon
     builder.AddChar(0xE949); // "Iconify window" button icon
     builder.AddChar(0xE739); // "Maximize window" button icon
@@ -84,8 +85,9 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
     // ImGuiRenderer
 
     imguiRenderer->declareUserInterface([this]() {
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 11));
+        createDockingSpace();
 
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
         if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED)) {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
         } else {
@@ -97,10 +99,31 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
         float buttonHeight = glfwGetWindowAttrib(window, GLFW_MAXIMIZED) ? 24 : 28;
 
         if (ImGui::BeginMainMenuBar()) {
-            ImGui::SetCursorPos(ImVec2(0, 0));
-            ImGui::Button("X", ImVec2(30, buttonHeight));
 
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8, 0.8, 0.8, 0.5));
+            ImGui::SetCursorPos(
+                    ImVec2((ImGui::GetIO().DisplaySize.x - ImGui::CalcTextSize("SpectralGrapher - Test Project").x) / 2,
+                           0));
+            ImGui::Text("SpectralGrapher - Test Project");
+            ImGui::PopStyleColor();
+
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
+
+            ImGui::SetCursorPos(ImVec2(0, 0));
+            ImGui::Button(reinterpret_cast<const char *>(u8"\uE700"), ImVec2(30, buttonHeight));
+
+            ImGui::SameLine();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 11));
             if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Settings")) {
+                    ImGui::OpenPopup("About");
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Exit")) {
+                    glfwSetWindowShouldClose(window, 1);
+                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Edit")) {
@@ -112,22 +135,23 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
             if (ImGui::BeginMenu("Help")) {
                 ImGui::EndMenu();
             }
+            ImGui::PopStyleVar();
 
             ImVec2 size = ImVec2(50, 0);
             ImGui::SetCursorPos(ImVec2(ImGui::GetIO().DisplaySize.x - size.x - 100, 0));
 
-            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
-            if (ImGui::Button(u8"\uE949", ImVec2(50, buttonHeight))) {
+            if (ImGui::Button(reinterpret_cast<const char *>(u8"\uE949"), ImVec2(50, buttonHeight))) {
                 glfwIconifyWindow(window);
             }
 
             ImGui::SetCursorPos(ImVec2(ImGui::GetIO().DisplaySize.x - size.x - 50, 0));
             if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED)) {
-                if (ImGui::Button(u8"\uE923", ImVec2(50, buttonHeight))) {
+                if (ImGui::Button(reinterpret_cast<const char *>(u8"\uE923"), ImVec2(50, buttonHeight))) {
                     glfwRestoreWindow(window);
                 }
             } else {
-                if (ImGui::Button(u8"\uE739", ImVec2(50, buttonHeight))) {
+                if (ImGui::Button(reinterpret_cast<const char *>(u8"\uE739"), ImVec2(50, buttonHeight))) {
+                    glfwFocusWindow(window);
                     glfwMaximizeWindow(window);
                 }
             }
@@ -135,7 +159,7 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
             ImGui::GetIO().Fonts->Fonts.Data[2];
             ImGui::SetCursorPos(ImVec2(ImGui::GetIO().DisplaySize.x - size.x, 0));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImColor(232, 17, 35).Value);
-            if (ImGui::Button(u8"\uE106", ImVec2(50, buttonHeight))) {
+            if (ImGui::Button(reinterpret_cast<const char *>(u8"\uE106"), ImVec2(50, buttonHeight))) {
                 glfwSetWindowShouldClose(window, true);
             }
             ImGui::PopStyleColor(2);
@@ -144,29 +168,20 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
         }
         ImGui::PopStyleVar(4);
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-        if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", nullptr, ImGuiDir_Up, 20,
-                                        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
-                                        ImGuiWindowFlags_MenuBar)) {
-            if (ImGui::BeginMenuBar()) {
-                ImGui::Text("Secondary menu bar");
-                ImGui::EndMenuBar();
-            }
-        }
-        ImGui::End();
 
-        if (ImGui::BeginViewportSideBar("##MainStatusBar", nullptr, ImGuiDir_Down, 20,
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        if (ImGui::BeginViewportSideBar("##MainStatusBar", nullptr, ImGuiDir_Down, 22,
                                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
                                         ImGuiWindowFlags_MenuBar)) {
             if (ImGui::BeginMenuBar()) {
-                ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+                ImGui::Text("FPS: %.0f \t Samples: %i", ImGui::GetIO().Framerate, computeRenderer->ubo.sampleIndex);
                 ImGui::EndMenuBar();
             }
         }
         ImGui::End();
         ImGui::PopStyleVar();
 
-        ImGui::Begin("Property inspector");
+        ImGui::Begin("Properties");
 
         if (ImGui::DragFloat3("Position", (float *) &computeRenderer->ubo.position, 0.1f)) {
             computeRenderer->ubo.sampleIndex = 0;
@@ -192,13 +207,10 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
         if (ImGui::ColorEdit3("Background Color", (float *) &computeRenderer->ubo.backgroundColor)) {
             computeRenderer->ubo.sampleIndex = 0;
         }
-        if (ImGui::InputFloat("Mandelbulb power", &computeRenderer->ubo.power, 0.1f)) {
-            computeRenderer->ubo.sampleIndex = 0;
-        }
 
         ImGui::End();
 
-        ImGui::Begin("Settings");
+        ImGui::Begin("Settings X");
         if (ImGui::CollapsingHeader("Devices")) {
             if (ImGui::BeginTable("Devices", 3)) {
                 auto devices = context->getInstance()->getInstance().enumeratePhysicalDevices();
@@ -219,7 +231,6 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
                 ImGui::EndTable();
             }
         }
-
         if (ImGui::CollapsingHeader("Objects")) {
             if (ImGui::BeginTable("Objects", 3)) {
                 auto devices = context->getInstance()->getInstance().enumeratePhysicalDevices();
@@ -266,12 +277,32 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
             }
         }
 
-        ImGui::Text("Samples rendered: %i", computeRenderer->ubo.sampleIndex);
         ImGui::End();
 
-        ImGui::Begin("Viewport");
-        ImGui::Image(imguiTexture, ImVec2(300, 300));
-        ImGui::End();
+        ImGui::ShowDemoWindow();
+
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+            ImGui::Begin("Viewport");
+
+            auto[frameWidth, frameHeight] = ImGui::GetContentRegionAvail();
+            ImGui::Image(imguiTexture, ImVec2(frameWidth, frameHeight));
+            if (ImGui::IsItemHovered()) {
+                if (ImGui::GetIO().MouseWheel != 0) {
+                    auto rotationMatrix = glm::orientate3(computeRenderer->ubo.rotation);
+                    auto directionVector = rotationMatrix * glm::vec3(1, 0, 0);
+                    computeRenderer->ubo.position += directionVector * ImGui::GetIO().MouseWheel;
+                    computeRenderer->ubo.sampleIndex = 0;
+                    //TODO: Wrong
+                }
+            }
+
+            //ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
+            //ImGui::Text("Top left viewport position!");
+
+            ImGui::End();
+            ImGui::PopStyleVar();
+        }
     });
 
     pipelineStageFlags = {vk::PipelineStageFlagBits::eFragmentShader};
@@ -354,7 +385,7 @@ void SimpleRasterizerWindowEx::initImGuiStyle() {
     colors[ImGuiCol_TabHovered] = panelHoverColor;
 
     colors[ImGuiCol_Text] = ImVec4(0.90f, 0.90f, 0.90f, 1.00f);
-    colors[ImGuiCol_Border] = ImVec4(0.29f, 0.29f, 0.29f, 1.00f);
+    colors[ImGuiCol_Border] = ImVec4(0.2f, 0.2f, 0.2f, 1.00f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
     colors[ImGuiCol_FrameBgHovered] = ImVec4(0.32f, 0.32f, 0.35f, 1.00f);
     colors[ImGuiCol_FrameBgActive] = ImVec4(0.28f, 0.28f, 0.31f, 1.00f);
@@ -363,6 +394,8 @@ void SimpleRasterizerWindowEx::initImGuiStyle() {
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
     colors[ImGuiCol_MenuBarBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
     colors[ImGuiCol_Separator] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+    colors[ImGuiCol_SeparatorActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
     colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.58f);
 
@@ -394,4 +427,50 @@ void SimpleRasterizerWindowEx::initImGuiStyle() {
 
     style.WindowTitleAlign = ImVec2(0, 0.5);
     style.ButtonTextAlign = ImVec2(0.5, 0.5);
+}
+
+void SimpleRasterizerWindowEx::createDockingSpace() {
+    auto viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+    auto windowFlags = ImGuiWindowFlags_NoDocking
+                       | ImGuiWindowFlags_NoTitleBar
+                       | ImGuiWindowFlags_NoCollapse
+                       | ImGuiWindowFlags_NoResize
+                       | ImGuiWindowFlags_NoMove
+                       | ImGuiWindowFlags_NoBringToFrontOnFocus
+                       | ImGuiWindowFlags_NoNavFocus
+                       | ImGuiWindowFlags_NoBackground
+                       | ImGuiWindowFlags_NoDecoration;
+
+    auto dockFlags = ImGuiDockNodeFlags_PassthruCentralNode
+                     | ImGuiDockNodeFlags_NoWindowMenuButton
+                     | ImGuiDockNodeFlags_NoCloseButton;
+
+    ImGui::Begin("Dock", nullptr, windowFlags);
+
+    if (!ImGui::DockBuilderGetNode(ImGui::GetID("MainDockingSpace"))) {
+        auto dockspace = ImGui::GetID("MainDockingSpace");
+        ImGui::DockBuilderRemoveNode(dockspace);
+        ImGui::DockBuilderAddNode(dockspace);
+
+        auto sideBarRight = ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Right, 0.2f, nullptr, &dockspace);
+
+        ImGui::DockBuilderDockWindow("Properties", sideBarRight);
+        ImGui::DockBuilderDockWindow("Viewport", dockspace);
+
+        ImGui::DockBuilderFinish(dockspace);
+    }
+
+    auto dockspaceId = ImGui::GetID("MainDockingSpace");
+    ImGui::DockSpace(dockspaceId, ImVec2(0, 0), dockFlags);
+
+    ImGui::End();
+    ImGui::PopStyleVar(3);
 }

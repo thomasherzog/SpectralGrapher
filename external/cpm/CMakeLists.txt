@@ -10,7 +10,9 @@ list(APPEND cpm_packages
         SPIRV-Headers
         SPIRV-Tools
         glslang
-        shaderc)
+        shaderc
+        stb
+        entt)
 
 include(CPM)
 

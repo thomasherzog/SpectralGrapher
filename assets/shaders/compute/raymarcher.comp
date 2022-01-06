@@ -18,22 +18,19 @@ layout (binding = 1) uniform UniformBufferObject {
     int maxSteps;
 
     vec3 backgroundColor;
-    
-    float power;
 } ubo;
 
-
-struct SDFShape {
+struct SignedDistanceField {
     int type;
+    int id;
 };
 
-/*layout (std140, set = 1, binding = 0) readonly buffer ShapeBuffer {
-    Shape shapes[];
-} shapeBuffer;*/
+layout (std430, set = 1, binding = 0) readonly buffer SignedDistanceFieldBuffer {
+    SignedDistanceField sdfs[];
+} sdfBuffer;
 
 struct ShapeDistance {
-    int shapeType;
-    int shapeId;
+    SignedDistanceField sdf;
     float distance;
 };
 
@@ -42,7 +39,7 @@ struct Sphere {
     float radius;
 };
 
-layout (std140, set = 1, binding = 0) readonly buffer SphereBuffer {
+layout (std140, set = 1, binding = 1) readonly buffer SphereBuffer {
     Sphere spheres[];
 } sphereBuffer;
 
@@ -51,7 +48,7 @@ struct Mandelbulb {
     float power;
 };
 
-layout (std140, set = 1, binding = 1) readonly buffer MandelbulbBuffer {
+layout (std140, set = 1, binding = 2) readonly buffer MandelbulbBuffer {
     Mandelbulb mandelbulbs[];
 } mandelbulbBuffer;
 
@@ -62,7 +59,7 @@ struct Ray {
 
 struct RayIntersection {
     vec3 normal;
-    int shape;
+    SignedDistanceField sdf;
 };
 
 mat3 getRotationMatrix(vec3 angles) {
@@ -88,6 +85,10 @@ Ray getRay(float u, float v, vec3 camPos, vec3 camRot, float camFOV) {
     vec3 cameraRight = rotMat * vec3(0, 1, 0);
     vec3 cameraUp = rotMat * vec3(0, 0, -1);
     return Ray(camPos, normalize(viewDirection + cameraRight * u + cameraUp * v));
+}
+
+vec3 getPointOnRay(Ray ray, float time) {
+    return ray.origin + ray.direction * time;
 }
 
 float getDistance_Mandelbulb(vec3 point, Mandelbulb mandelbulb) {
@@ -121,6 +122,17 @@ float getDistance_Sphere(vec3 point, Sphere sphere) {
     return length(point - sphere.position) - sphere.radius;
 }
 
+float getDistance(vec3 point, SignedDistanceField sdf) {
+    switch(sdf.type) {
+        case 1:
+            return getDistance_Sphere(point, sphereBuffer.spheres[sdf.id]);
+        case 2:
+            return getDistance_Mandelbulb(point, mandelbulbBuffer.mandelbulbs[sdf.id]);
+        default:
+            return -1;
+    }
+}
+
 vec3 estimateNormal_Sphere(vec3 point, Sphere sphere) {
     float distance = getDistance_Sphere(point, sphere);
     return normalize(vec3(
@@ -139,38 +151,32 @@ vec3 estimateNormal_Mandelbulb(vec3 point, Mandelbulb mandelbulb) {
     ));
 }
 
-vec3 getPointOnRay(Ray ray, float time) {
-    return ray.origin + ray.direction * time;
+vec3 estimateNormal(vec3 point, SignedDistanceField sdf) {
+    switch(sdf.type) {
+            case 1:
+                return estimateNormal_Sphere(point, sphereBuffer.spheres[sdf.id]);
+            case 2:
+                return estimateNormal_Mandelbulb(point, mandelbulbBuffer.mandelbulbs[sdf.id]);
+            default:
+                return vec3(0,0,0);
+        }
 }
 
 ShapeDistance getNearestDistance(vec3 point) {
     float nearestTime = 9999999;
-    int shapeType = -1;
-    int shapeId = -1;
+    SignedDistanceField nearestSDF = SignedDistanceField(-1,-1);
 
-    for(int i = 0; i < sphereBuffer.spheres.length(); i++) {
-        float distance = getDistance_Sphere(point, sphereBuffer.spheres[i]);
+    for(int i = 0; i < sdfBuffer.sdfs.length(); i++) {
+        float distance = getDistance(point, sdfBuffer.sdfs[i]);
         if (distance <= ubo.epsilon) {
-            return ShapeDistance(0, i, distance);
+            return ShapeDistance(sdfBuffer.sdfs[i], distance);
         }
         if(nearestTime > distance) {
             nearestTime = distance;
-            shapeType = 0;
-            shapeId = i;
+            nearestSDF = sdfBuffer.sdfs[i];
         }
     }
-    for(int i = 0; i < mandelbulbBuffer.mandelbulbs.length(); i++) {
-            float distance = getDistance_Mandelbulb(point, mandelbulbBuffer.mandelbulbs[i]);
-            if (distance <= ubo.epsilon) {
-                return ShapeDistance(1, i, distance);
-            }
-            if(nearestTime > distance) {
-                nearestTime = distance;
-                shapeType = 1;
-                shapeId = i;
-            }
-        }
-    return ShapeDistance(-1, shapeId, nearestTime);
+    return ShapeDistance(nearestSDF, nearestTime);
 }
 
 RayIntersection traceRay(Ray ray) {
@@ -182,19 +188,14 @@ RayIntersection traceRay(Ray ray) {
 
         ShapeDistance distance = getNearestDistance(point);
         if (distance.distance <= ubo.epsilon) {
-            vec3 normal = vec3(0,0,0);
-            if(distance.shapeType == 0) {
-                normal = estimateNormal_Sphere(point, sphereBuffer.spheres[distance.shapeId]);
-            }else if(distance.shapeType == 1) {
-                normal = estimateNormal_Mandelbulb(point, mandelbulbBuffer.mandelbulbs[distance.shapeId]);
-            }
-            return RayIntersection(normal, 1);
+            vec3 normal = estimateNormal(point, distance.sdf);
+            return RayIntersection(normal, distance.sdf);
         }
 
         time += distance.distance;
         steps++;
     }
-    return RayIntersection(vec3(0.0f, 0.0f, 0.0f), -1);
+    return RayIntersection(vec3(0.0f, 0.0f, 0.0f), SignedDistanceField(-1,-1));
 }
 
 vec3 getNormalColor(RayIntersection inter) {
@@ -236,7 +237,7 @@ void main() {
 
             vec3 color = vec3(0, 0, 0);
             float factor = 0.0f;
-            if (intersection.shape != -1) {
+            if (intersection.sdf.id != -1) {
                 factor = max(0.0f, dot(intersection.normal, -ray.direction));
                 color = factor * getNormalColor(intersection);
             }else{

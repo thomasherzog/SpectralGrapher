@@ -6,7 +6,7 @@
 #include "renderer/SwapchainImageRenderer.h"
 #include "renderer/ImGuiRenderer.h"
 
-#ifdef _WIN32
+#ifndef _WIN32
 #include "native/windows/Win32CustomTitlebar.h"
 #endif
 
@@ -22,6 +22,8 @@ public:
 
     void initImGuiStyle();
 
+    void createDockingSpace();
+
 private:
     std::unique_ptr<ComputeRenderer> computeRenderer;
 
@@ -33,7 +35,7 @@ private:
 
     vk::Semaphore computeToSwapchainSemaphore;
 
-#ifdef _WIN32
+#ifndef _WIN32
     Win32CustomTitlebar titlebar;
 #endif
 

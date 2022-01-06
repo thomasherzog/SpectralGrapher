@@ -26,6 +26,7 @@ public:
 private:
     vk::Instance instance{VK_NULL_HANDLE};
 
+    std::optional<DebugMessenger> debugMessenger;
 };
 
 #endif //SPECTRALGRAPHER_INSTANCE_H

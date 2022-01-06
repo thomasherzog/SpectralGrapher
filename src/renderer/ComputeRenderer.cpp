@@ -16,6 +16,16 @@ ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int w
 
     mandelbulbs.push_back({glm::vec3{1, 1, 1}, 8.0f});
 
+    sdfs.clear();
+    {
+        for(int i = 0; i < spheres.size(); i++) {
+            sdfs.push_back({1, i});
+        }
+        for(int i = 0; i < mandelbulbs.size(); i++) {
+            sdfs.push_back({2, i});
+        }
+    }
+
     createComputeImage(width, height);
     createUniformBuffer();
     createDescriptorSetLayout();
@@ -45,6 +55,7 @@ ComputeRenderer::~ComputeRenderer() {
     vmaDestroyImage(context->getAllocator(), accumulationImage.image, accumulationImage.allocation);
 
     vmaDestroyBuffer(context->getAllocator(), uniformBuffer.buffer, uniformBuffer.allocation);
+    vmaDestroyBuffer(context->getAllocator(), sdfBuffer.buffer, sdfBuffer.allocation);
     vmaDestroyBuffer(context->getAllocator(), sphereBuffer.buffer, sphereBuffer.allocation);
     vmaDestroyBuffer(context->getAllocator(), mandelbulbBuffer.buffer, mandelbulbBuffer.allocation);
 }
@@ -81,6 +92,21 @@ RecordedCommandBuffer ComputeRenderer::recordCommandBuffer() {
 
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout, 0,
                                      descriptorSets[imageIndex], nullptr);
+
+    {
+        void *objectData;
+        vmaMapMemory(context->getAllocator(), sdfBuffer.allocation, &objectData);
+
+        auto *objectSSBO = (SignedDistanceField *) objectData;
+
+        for (int i = 0; i < sdfs.size(); i++) {
+            SignedDistanceField &object = sdfs[i];
+            objectSSBO[i].type = object.type;
+            objectSSBO[i].id = object.id;
+        }
+
+        vmaUnmapMemory(context->getAllocator(), sdfBuffer.allocation);
+    }
 
     {
         void *objectData;
@@ -268,6 +294,26 @@ void ComputeRenderer::createUniformBuffer() {
             nullptr
     );
 
+    // SDF BUFFER
+    createInfo = {
+            {},
+            sdfs.size() * sizeof(SignedDistanceField),
+            vk::BufferUsageFlagBits::eStorageBuffer,
+            {}, nullptr
+    };
+
+    allocationInfo = {};
+    allocationInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+    vmaCreateBuffer(
+            context->getAllocator(),
+            reinterpret_cast<const VkBufferCreateInfo *>(&createInfo),
+            &allocationInfo,
+            reinterpret_cast<VkBuffer *>(&sdfBuffer.buffer),
+            &sdfBuffer.allocation,
+            nullptr
+    );
+    // END SDF BUFFER
 
     createInfo = {
             {},
@@ -303,6 +349,20 @@ void ComputeRenderer::createUniformBuffer() {
             nullptr
     );
 
+    {
+        void *objectData;
+        vmaMapMemory(context->getAllocator(), sdfBuffer.allocation, &objectData);
+
+        auto *objectSSBO = (SignedDistanceField *) objectData;
+
+        for (int i = 0; i < sdfs.size(); i++) {
+            SignedDistanceField &object = sdfs[i];
+            objectSSBO[i].type = object.type;
+            objectSSBO[i].id = object.id;
+        }
+
+        vmaUnmapMemory(context->getAllocator(), sdfBuffer.allocation);
+    }
 
     {
         void *objectData;
@@ -333,7 +393,6 @@ void ComputeRenderer::createUniformBuffer() {
 
         vmaUnmapMemory(context->getAllocator(), mandelbulbBuffer.allocation);
     }
-
 
     updateUniformBuffer();
 }
@@ -368,6 +427,12 @@ void ComputeRenderer::createDescriptorSetLayout() {
             },
             vk::DescriptorSetLayoutBinding{
                     1,
+                    vk::DescriptorType::eStorageBuffer,
+                    1,
+                    vk::ShaderStageFlagBits::eCompute
+            },
+            vk::DescriptorSetLayoutBinding{
+                    2,
                     vk::DescriptorType::eStorageBuffer,
                     1,
                     vk::ShaderStageFlagBits::eCompute
@@ -482,9 +547,17 @@ void ComputeRenderer::updateDescriptorSets() {
                                        {}, descriptorBufferInfo}
         );
 
-        vk::DescriptorBufferInfo descriptorSphereInfo(sphereBuffer.buffer, {}, spheres.size() * sizeof(Sphere));
+        vk::DescriptorBufferInfo descriptorSDFInfo(sdfBuffer.buffer, {}, sdfs.size() * sizeof(SignedDistanceField));
         writeDescriptorSets.push_back({descriptorSetsObj[i],
                                        0,
+                                       {},
+                                       vk::DescriptorType::eStorageBuffer,
+                                       {}, descriptorSDFInfo}
+        );
+
+        vk::DescriptorBufferInfo descriptorSphereInfo(sphereBuffer.buffer, {}, spheres.size() * sizeof(Sphere));
+        writeDescriptorSets.push_back({descriptorSetsObj[i],
+                                       1,
                                        {},
                                        vk::DescriptorType::eStorageBuffer,
                                        {}, descriptorSphereInfo}
@@ -493,7 +566,7 @@ void ComputeRenderer::updateDescriptorSets() {
         vk::DescriptorBufferInfo descriptorMandelbulbInfo(mandelbulbBuffer.buffer, {},
                                                      mandelbulbs.size() * sizeof(Mandelbulb));
         writeDescriptorSets.push_back({descriptorSetsObj[i],
-                                       1,
+                                       2,
                                        {},
                                        vk::DescriptorType::eStorageBuffer,
                                        {}, descriptorMandelbulbInfo}
@@ -519,6 +592,4 @@ void ComputeRenderer::updateUniformBuffer() {
     std::memcpy(data, &ubo, sizeof(UniformCamObj));
     vmaUnmapMemory(context->getAllocator(), uniformBuffer.allocation);
 }
-
-
 

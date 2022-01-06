@@ -20,6 +20,11 @@ struct AllocatedBuffer {
     vk::Buffer buffer;
 };
 
+struct SignedDistanceField {
+    alignas(4) int type = -1;
+    alignas(4) int id = -1;
+};
+
 struct Sphere {
     glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
     float radius = 1.0f;
@@ -40,7 +45,6 @@ struct UniformCamObj {
     alignas(4) int maxTime = 7;
     alignas(4) int maxSteps = 200;
     alignas(16) glm::vec3 backgroundColor = glm::vec3(0.0f, 0.0f, 0.0f);
-    alignas(4) float power = 8.0f;
 };
 
 class ComputeRenderer {
@@ -70,14 +74,16 @@ public:
     AllocatedBuffer uniformBuffer;
     UniformCamObj ubo;
 
+    std::vector<SignedDistanceField> sdfs;
     std::vector<Sphere> spheres;
     std::vector<Mandelbulb> mandelbulbs;
 
+    AllocatedBuffer sdfBuffer;
     AllocatedBuffer sphereBuffer;
     AllocatedBuffer mandelbulbBuffer;
+
     vk::DescriptorSetLayout objectDSL;
     std::vector<vk::DescriptorSet> descriptorSetsObj;
-
 private:
     std::shared_ptr<vulkan::Context> context;
 

@@ -33,6 +33,10 @@ list(APPEND source_files
 
         src/examples/SimpleRasterizerWindowEx.cpp
 
+        #src/shape/ShapeManager.cpp
+        #src/shape/ShapeType.cpp
+        #src/shape/ShapeFieldType.cpp
+
         src/renderer/RecordedCommandBuffer.cpp
         src/renderer/ComputeRenderer.cpp
         src/renderer/SwapchainImageRenderer.cpp

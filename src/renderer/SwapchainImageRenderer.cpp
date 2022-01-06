@@ -2,6 +2,10 @@
 
 #include <fstream>
 #include <utility>
+#include <shaderc/shaderc.hpp>
+#include <cmrc/cmrc.hpp>
+
+CMRC_DECLARE(shaders);
 
 SwapchainImageRenderer::SwapchainImageRenderer(std::shared_ptr<vulkan::Context> context,
                                                vulkan::Swapchain &swapchain) : context(std::move(context)) {
@@ -20,7 +24,7 @@ SwapchainImageRenderer::~SwapchainImageRenderer() {
         context->getDevice()->getVkDevice().freeCommandBuffers(commandPools[i], commandBuffers[i]);
         context->getDevice()->getVkDevice().destroyCommandPool(commandPools[i]);
     }
-    for(auto &descriptorPool : descriptorPools) {
+    for (auto &descriptorPool: descriptorPools) {
         context->getDevice()->getVkDevice().destroyDescriptorPool(descriptorPool);
     }
     context->getDevice()->getVkDevice().destroyPipeline(pipeline);
@@ -91,7 +95,8 @@ void SwapchainImageRenderer::onSwapchainResize(vulkan::Swapchain &swapchain) {
 }
 
 void SwapchainImageRenderer::updateDescriptorSet(AllocatedImage image, int imageIndex) {
-    vk::DescriptorImageInfo descriptorImageInfo(image.sampler, image.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+    vk::DescriptorImageInfo descriptorImageInfo(image.sampler, image.imageView,
+                                                vk::ImageLayout::eShaderReadOnlyOptimal);
 
     vk::WriteDescriptorSet writeDescriptorSet(descriptorSets[imageIndex],
                                               0,
@@ -249,34 +254,45 @@ void SwapchainImageRenderer::createRasterizer() {
     // Load shaders
 
     // Fragment shader
-    std::ifstream fragmentFile("basic.frag.spv", std::ios::ate | std::ios::binary);
-    if (!fragmentFile.is_open()) {
-        throw std::runtime_error("Failed to open file!");
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
+
+    auto fs = cmrc::shaders::get_filesystem();
+    auto shaderResource = fs.open("shaders/rasterization/basic.frag");
+    std::string shaderSource{shaderResource.begin(), shaderResource.end()};
+    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
+            shaderSource,
+            shaderc_glsl_fragment_shader,
+            "name",
+            options
+    );
+
+    if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+        std::cerr << result.GetErrorMessage();
     }
-    size_t fileSize = (size_t) fragmentFile.tellg();
-    std::vector<char> buffer(fileSize);
-    fragmentFile.seekg(0);
-    fragmentFile.read(buffer.data(), fileSize);
-    fragmentFile.close();
-    vk::ShaderModule fragmentShaderModule = context->getDevice()->getVkDevice().createShaderModule(
-            vk::ShaderModuleCreateInfo{
-                    {}, buffer.size(), reinterpret_cast<const uint32_t *>(buffer.data())
-            });
+    std::vector<uint32_t> spirv{result.begin(), result.end()};
+    vk::ShaderModule fragmentShaderModule = context->getDevice()->getVkDevice().createShaderModule(vk::ShaderModuleCreateInfo{
+            {}, spirv.size() * sizeof(uint32_t), spirv.data()
+    });
 
     // Vertex shader
-    std::ifstream vertexFile("basic.vert.spv", std::ios::ate | std::ios::binary);
-    if (!vertexFile.is_open()) {
-        throw std::runtime_error("Failed to open file!");
+    shaderResource = fs.open("shaders/rasterization/basic.vert");
+    shaderSource = {shaderResource.begin(), shaderResource.end()};
+    result = compiler.CompileGlslToSpv(
+            shaderSource,
+            shaderc_glsl_vertex_shader,
+            "name",
+            options
+    );
+
+    if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+        std::cerr << result.GetErrorMessage();
     }
-    fileSize = (size_t) vertexFile.tellg();
-    buffer = std::vector<char>(fileSize);
-    vertexFile.seekg(0);
-    vertexFile.read(buffer.data(), fileSize);
-    vertexFile.close();
-    vk::ShaderModule vertexShaderModule = context->getDevice()->getVkDevice().createShaderModule(
-            vk::ShaderModuleCreateInfo{
-                    {}, buffer.size(), reinterpret_cast<const uint32_t *>(buffer.data())
-            });
+    spirv = {result.begin(), result.end()};
+    vk::ShaderModule vertexShaderModule = context->getDevice()->getVkDevice().createShaderModule(vk::ShaderModuleCreateInfo{
+            {}, spirv.size() * sizeof(uint32_t), spirv.data()
+    });
 
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages;
 
