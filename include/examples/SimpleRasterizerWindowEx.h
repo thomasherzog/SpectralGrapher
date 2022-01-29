@@ -6,7 +6,7 @@
 #include "renderer/SwapchainImageRenderer.h"
 #include "renderer/ImGuiRenderer.h"
 
-#ifndef _WIN32
+#ifdef _WIN32
 #include "native/windows/Win32CustomTitlebar.h"
 #endif
 
@@ -35,7 +35,7 @@ private:
 
     vk::Semaphore computeToSwapchainSemaphore;
 
-#ifndef _WIN32
+#ifdef _WIN32
     Win32CustomTitlebar titlebar;
 #endif
 

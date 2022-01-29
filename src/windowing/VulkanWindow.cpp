@@ -55,14 +55,6 @@ namespace windowing {
         }
 
         glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width, int height) {
-            static_cast<VulkanWindow *>(glfwGetWindowUserPointer(window))->recreateSwapchain();
-            static_cast<VulkanWindow *>(glfwGetWindowUserPointer(window))->onWindowRender();
-        });
-        glfwSetWindowPosCallback(window, [](GLFWwindow *window, int x, int y) {
-            static_cast<VulkanWindow *>(glfwGetWindowUserPointer(window))->onWindowRender();
-        });
-
     }
 
     VulkanWindow::~VulkanWindow() {

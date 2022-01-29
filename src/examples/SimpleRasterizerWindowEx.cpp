@@ -7,7 +7,7 @@
 CMRC_DECLARE(fonts);
 
 SimpleRasterizerWindowEx::SimpleRasterizerWindowEx()
-#ifndef _WIN32
+#ifdef _WIN32
 : titlebar(window)
 #endif
 {
@@ -151,7 +151,6 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
                 }
             } else {
                 if (ImGui::Button(reinterpret_cast<const char *>(u8"\uE739"), ImVec2(50, buttonHeight))) {
-                    glfwFocusWindow(window);
                     glfwMaximizeWindow(window);
                 }
             }
@@ -288,7 +287,7 @@ void SimpleRasterizerWindowEx::onRender(vulkan::SyncObject syncObject, uint32_t 
             if (ImGui::IsItemHovered()) {
                 if (ImGui::GetIO().KeyCtrl && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                     auto delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
-                    printf("%f - %f\n",delta.x, delta.y);
+                    printf("%f - %f\n", delta.x, delta.y);
                 } else // Mouse wheel zoom
                 if (ImGui::GetIO().MouseWheel != 0) {
                     glm::vec2 x = glm::vec2(std::cos(computeRenderer->ubo.rotation.x),
