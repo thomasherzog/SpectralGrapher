@@ -23,6 +23,7 @@ layout (binding = 1) uniform UniformBufferObject {
 struct SignedDistanceField {
     int type;
     int id;
+    int dataOffset;
 };
 
 layout (std430, set = 1, binding = 0) readonly buffer SignedDistanceFieldBuffer {
@@ -58,6 +59,7 @@ struct Ray {
 };
 
 struct RayIntersection {
+    vec3 position;
     vec3 normal;
     SignedDistanceField sdf;
 };
@@ -68,14 +70,21 @@ mat3 getRotationMatrix(vec3 angles) {
     vec2 z = vec2(cos(angles.z), sin(angles.z));
 
     mat3 rot;
-    rot[0] = vec3(y.x * z.x, -y.x * z.y, y.y);
-    rot[1] = vec3(z.x * x.y * y.y + x.x * z.y,
-                  x.x * z.x - x.y * y.y * z.y,
-                  -y.x * x.y);
-    rot[2] = vec3(-x.x * z.x * y.y + x.y * z.y,
-                  z.x * x.y + x.x * y.y * z.y,
-                  x.x * y.x);
-
+    rot[0] = vec3(
+        x.x*z.x-x.y*y.x*z.y,
+        -x.x*z.y-x.y*y.x*z.x,
+        x.y*y.y
+    );
+    rot[1] = vec3(
+        x.y*z.x+x.x*y.x*z.y,
+        -x.y*z.y+x.x*y.x*z.x,
+        -x.x*y.y
+    );
+    rot[2] = vec3(
+        y.y*z.y,
+        y.y*z.x,
+        y.x
+    );
     return rot;
 }
 
@@ -164,7 +173,7 @@ vec3 estimateNormal(vec3 point, SignedDistanceField sdf) {
 
 ShapeDistance getNearestDistance(vec3 point) {
     float nearestTime = 9999999;
-    SignedDistanceField nearestSDF = SignedDistanceField(-1,-1);
+    SignedDistanceField nearestSDF = SignedDistanceField(-1,-1, -1);
 
     for(int i = 0; i < sdfBuffer.sdfs.length(); i++) {
         float distance = getDistance(point, sdfBuffer.sdfs[i]);
@@ -189,13 +198,14 @@ RayIntersection traceRay(Ray ray) {
         ShapeDistance distance = getNearestDistance(point);
         if (distance.distance <= ubo.epsilon) {
             vec3 normal = estimateNormal(point, distance.sdf);
-            return RayIntersection(normal, distance.sdf);
+            return RayIntersection(point, normal, distance.sdf);
         }
 
         time += distance.distance;
         steps++;
     }
-    return RayIntersection(vec3(0.0f, 0.0f, 0.0f), SignedDistanceField(-1,-1));
+
+    return RayIntersection(vec3(0.0f,0.0f,0.0f), vec3(0.0f, 0.0f, 0.0f), SignedDistanceField(-1,-1, -1));
 }
 
 vec3 getNormalColor(RayIntersection inter) {
@@ -214,6 +224,20 @@ float getHaltonSample(int index, int base){
         i = floor(i / base);
     }
     return r;
+}
+
+float calcAO(vec3 position, vec3 normal) {
+    float occ = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<20; i++ )
+    {
+        float r = 0.01 + 0.1*float(i);
+        vec3 aopos =  normal * r + position;
+        float d = getNearestDistance( aopos ).distance;
+        occ += (r - d)*sca;
+        sca *= 0.85;
+    }
+    return clamp( 1.0 - occ / 3.14, 0.0, 1.0 );
 }
 
 void main() {
@@ -237,12 +261,16 @@ void main() {
 
             vec3 color = vec3(0, 0, 0);
             float factor = 0.0f;
-            if (intersection.sdf.id != -1) {
-                factor = max(0.0f, dot(intersection.normal, -ray.direction));
-                color = factor * getNormalColor(intersection);
-            }else{
+            if (intersection.sdf.id >= 0) {
+                //factor = max(0.0f, dot(intersection.normal, -ray.direction));
+                factor = calcAO(intersection.position, intersection.normal);
+                color = getNormalColor(intersection);
+            }else if(intersection.sdf.id == -1) {
                 factor = 1.0f;
                 color = factor * ubo.backgroundColor;
+            }else if(intersection.sdf.id == -2) {
+                factor = 1.0f;
+                color = vec3(1,0,0);
             }
             sampledColor = (sampledColor * (float(s) - 1) + (factor * color)) * (1.0f / float(s));
     }

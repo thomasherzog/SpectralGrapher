@@ -23,6 +23,7 @@ struct AllocatedBuffer {
 struct SignedDistanceField {
     alignas(4) int type = -1;
     alignas(4) int id = -1;
+    alignas(4) int dataOffset = -1;
 };
 
 struct Sphere {

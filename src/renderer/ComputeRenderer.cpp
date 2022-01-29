@@ -19,10 +19,10 @@ ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int w
     sdfs.clear();
     {
         for(int i = 0; i < spheres.size(); i++) {
-            sdfs.push_back({1, i});
+            sdfs.push_back({1, i,1});
         }
         for(int i = 0; i < mandelbulbs.size(); i++) {
-            sdfs.push_back({2, i});
+            sdfs.push_back({2, i,1});
         }
     }
 
