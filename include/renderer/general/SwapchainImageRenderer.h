@@ -3,7 +3,7 @@
 
 #include "graphics/vulkan/core/Context.h"
 #include "graphics/vulkan/core/Swapchain.h"
-#include "renderer/RecordedCommandBuffer.h"
+#include "renderer/general/RecordedCommandBuffer.h"
 #include "renderer/ComputeRenderer.h"
 
 class SwapchainImageRenderer {

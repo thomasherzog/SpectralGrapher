@@ -2,7 +2,10 @@
 #define SPECTRALGRAPHER_COMPUTERENDERER_H
 
 #include "graphics/vulkan/core/Context.h"
-#include "renderer/RecordedCommandBuffer.h"
+#include "renderer/general/RecordedCommandBuffer.h"
+
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
 
 #include <glm/vec3.hpp>
 #include <glm/mat3x3.hpp>
@@ -85,6 +88,9 @@ public:
 
     vk::DescriptorSetLayout objectDSL;
     std::vector<vk::DescriptorSet> descriptorSetsObj;
+
+    ImTextureID imguiTexture;
+
 private:
     std::shared_ptr<vulkan::Context> context;
 

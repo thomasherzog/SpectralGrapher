@@ -148,6 +148,7 @@ namespace windowing {
     std::vector<std::tuple<int, int>> VulkanWindow::getRequiredWindowHints() {
         std::vector<std::tuple<int, int>> hints;
         hints.emplace_back(GLFW_CLIENT_API, GLFW_NO_API);
+        hints.emplace_back(GLFW_SRGB_CAPABLE, GLFW_TRUE);
         return hints;
     }
 

@@ -20,6 +20,10 @@ layout (binding = 1) uniform UniformBufferObject {
     vec3 backgroundColor;
 } ubo;
 
+// =====================
+// Signed Distance Field
+// =====================
+
 struct SignedDistanceField {
     int type;
     int id;
@@ -30,10 +34,25 @@ layout (std430, set = 1, binding = 0) readonly buffer SignedDistanceFieldBuffer 
     SignedDistanceField sdfs[];
 } sdfBuffer;
 
-struct ShapeDistance {
-    SignedDistanceField sdf;
-    float distance;
+// ========
+// Material
+// ========
+
+/*struct Material {
+    vec3 emmitance;
+    vec3 reflectance;
+    float roughness;
+    float opacity;
 };
+
+layout (std430, set = 1, binding = 1) readonly buffer MaterialBuffer {
+    Material materials[];
+} materialBuffer;*/
+
+
+// ====================
+// Hardcoded Sphere SDF
+// ====================
 
 struct Sphere {
     vec3 position;
@@ -44,6 +63,11 @@ layout (std140, set = 1, binding = 1) readonly buffer SphereBuffer {
     Sphere spheres[];
 } sphereBuffer;
 
+
+// ========================
+// Hardcoded Mandelbulb SDF
+// ========================
+
 struct Mandelbulb {
     vec3 position;
     float power;
@@ -52,6 +76,15 @@ struct Mandelbulb {
 layout (std140, set = 1, binding = 2) readonly buffer MandelbulbBuffer {
     Mandelbulb mandelbulbs[];
 } mandelbulbBuffer;
+
+// ===============
+// Utility Structs
+// ===============
+
+struct ShapeDistance {
+    SignedDistanceField sdf;
+    float distance;
+};
 
 struct Ray {
     vec3 origin;
@@ -226,7 +259,7 @@ float getHaltonSample(int index, int base){
     return r;
 }
 
-float calcAO(vec3 position, vec3 normal) {
+float calculateAmbientOcclusion(vec3 position, vec3 normal) {
     float occ = 0.0;
     float sca = 1.0;
     for( int i=0; i<20; i++ )
@@ -263,7 +296,7 @@ void main() {
             float factor = 0.0f;
             if (intersection.sdf.id >= 0) {
                 //factor = max(0.0f, dot(intersection.normal, -ray.direction));
-                factor = calcAO(intersection.position, intersection.normal);
+                factor = calculateAmbientOcclusion(intersection.position, intersection.normal);
                 color = getNormalColor(intersection);
             }else if(intersection.sdf.id == -1) {
                 factor = 1.0f;

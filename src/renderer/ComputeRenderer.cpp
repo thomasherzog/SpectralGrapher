@@ -18,11 +18,11 @@ ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int w
 
     sdfs.clear();
     {
-        for(int i = 0; i < spheres.size(); i++) {
-            sdfs.push_back({1, i,1});
+        for (int i = 0; i < spheres.size(); i++) {
+            sdfs.push_back({1, i, 1});
         }
-        for(int i = 0; i < mandelbulbs.size(); i++) {
-            sdfs.push_back({2, i,1});
+        for (int i = 0; i < mandelbulbs.size(); i++) {
+            sdfs.push_back({2, i, 1});
         }
     }
 
@@ -34,6 +34,10 @@ ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int w
     createDescriptorPool();
     createDescriptorSets();
     createCommandBuffers();
+
+    imguiTexture = ImGui_ImplVulkan_AddTexture(accumulationImage.sampler,
+                                               accumulationImage.imageView,
+                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 ComputeRenderer::~ComputeRenderer() {
@@ -180,6 +184,10 @@ void ComputeRenderer::resizeImage(int width, int height) {
 
     createComputeImage(width, height);
     updateDescriptorSets();
+
+    imguiTexture = ImGui_ImplVulkan_AddTexture(accumulationImage.sampler,
+                                               accumulationImage.imageView,
+                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 
@@ -564,7 +572,7 @@ void ComputeRenderer::updateDescriptorSets() {
         );
 
         vk::DescriptorBufferInfo descriptorMandelbulbInfo(mandelbulbBuffer.buffer, {},
-                                                     mandelbulbs.size() * sizeof(Mandelbulb));
+                                                          mandelbulbs.size() * sizeof(Mandelbulb));
         writeDescriptorSets.push_back({descriptorSetsObj[i],
                                        2,
                                        {},

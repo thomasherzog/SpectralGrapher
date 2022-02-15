@@ -12,7 +12,8 @@ list(APPEND cpm_packages
         glslang
         shaderc
         stb
-        entt)
+        entt
+        json)
 
 include(CPM)
 

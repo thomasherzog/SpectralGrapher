@@ -31,16 +31,27 @@ list(APPEND source_files
         src/windowing/BaseWindow.cpp
         src/windowing/VulkanWindow.cpp
 
-        src/examples/SimpleRasterizerWindowEx.cpp
-
         #src/shape/ShapeManager.cpp
         #src/shape/ShapeType.cpp
         #src/shape/ShapeFieldType.cpp
 
-        src/renderer/RecordedCommandBuffer.cpp
+        src/ui/editor/EditorWindow.cpp
+        src/ui/editor/views/ViewportView.cpp
+        src/ui/editor/views/PropertiesView.cpp
+        src/ui/editor/views/DockSpaceView.cpp
+        src/ui/editor/views/ViewportBarsView.cpp
+
+        src/ui/editor/popups/Popup.cpp
+        src/ui/editor/popups/SettingsPopup.cpp
+
+        src/ui/appearance/UIThemeManager.cpp
+        src/ui/components/NativeTitlebar.cpp
+
+        src/renderer/general/RecordedCommandBuffer.cpp
+        src/renderer/general/SwapchainImageRenderer.cpp
+        src/renderer/general/ImGuiRenderer.cpp
         src/renderer/ComputeRenderer.cpp
-        src/renderer/SwapchainImageRenderer.cpp
-        src/renderer/ImGuiRenderer.cpp)
+        )
 
 add_executable(SpectralGrapher ${source_files})
 

@@ -1,4 +1,4 @@
-#include "renderer/ImGuiRenderer.h"
+#include "renderer/general/ImGuiRenderer.h"
 
 ImGuiRenderer::ImGuiRenderer(std::shared_ptr<vulkan::Context> context, GLFWwindow *window, vulkan::Swapchain &swapchain)
         : context(context) {
@@ -135,11 +135,11 @@ void ImGuiRenderer::createCommandBuffers(int imagesInFlight) {
 void ImGuiRenderer::createRenderPass(vulkan::Swapchain &swapchain) {
     vk::AttachmentDescription attachmentDescription({}, swapchain.format.format,
                                                     vk::SampleCountFlagBits::e1,
-                                                    vk::AttachmentLoadOp::eLoad,
+                                                    vk::AttachmentLoadOp::eDontCare,
                                                     vk::AttachmentStoreOp::eStore,
                                                     vk::AttachmentLoadOp::eDontCare,
                                                     vk::AttachmentStoreOp::eDontCare,
-                                                    vk::ImageLayout::eGeneral,
+                                                    vk::ImageLayout::eUndefined,
                                                     vk::ImageLayout::ePresentSrcKHR);
 
     vk::AttachmentReference attachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);

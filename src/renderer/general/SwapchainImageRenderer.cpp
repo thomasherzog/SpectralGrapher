@@ -1,4 +1,4 @@
-#include "renderer/SwapchainImageRenderer.h"
+#include "renderer/general/SwapchainImageRenderer.h"
 
 #include <fstream>
 #include <utility>

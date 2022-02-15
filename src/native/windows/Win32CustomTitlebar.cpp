@@ -10,9 +10,6 @@ Win32CustomTitlebar::Win32CustomTitlebar(GLFWwindow *window) : window(window) {
     HWND hwnd = glfwGetWin32Window(window);
 
     SetWindowSubclass(hwnd, &Win32CustomTitlebar::myProc, 1, (DWORD_PTR) this);
-
-    const MARGINS shadow_on = {0, 0, 1, 0};
-    DwmExtendFrameIntoClientArea(hwnd, &shadow_on);
 }
 
 LRESULT CALLBACK Win32CustomTitlebar::myProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass,
@@ -23,13 +20,16 @@ LRESULT CALLBACK Win32CustomTitlebar::myProc(HWND hwnd, UINT uMsg, WPARAM wParam
     switch (uMsg) {
         case WM_ACTIVATE: {
             brush = CreateSolidBrush(RGB(36, 36, 36));
-            SetClassLongPtr(hwnd, -10, (LONG_PTR) brush);
+            SetClassLongPtr(hwnd, GCLP_HBRBACKGROUND, (LONG_PTR) brush);
+
+            const MARGINS shadow_on = {0, 0, 1, 0};
+            DwmExtendFrameIntoClientArea(hwnd, &shadow_on);
+
             SetWindowPos(hwnd, hwnd, 0, 0, 0, 0,
                          SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 
             return DefSubclassProc(hwnd, uMsg, wParam, lParam);
         }
-
         case WM_NCCALCSIZE: {
             return getWmNcCalcSize(hwnd, uMsg, wParam, lParam);
         }
@@ -84,11 +84,11 @@ LRESULT Win32CustomTitlebar::getBorderlessHitTest(HWND hwnd, UINT uMsg, WPARAM w
         if (cursorPos.x > windowRect.right - 8 - settings.controlBoxWidth && cursorPos.x <= windowRect.right - 8) {
             // Control Box
             if (cursorPos.x > windowRect.right - 8 - (settings.controlBoxWidth / 3)) {
-                return HTNOWHERE;
+                return HTCLOSE;
             } else if (cursorPos.x > windowRect.right - 8 - (settings.controlBoxWidth / 3) * 2) {
-                return HTNOWHERE;
+                return HTMAXBUTTON;
             } else if (cursorPos.x > windowRect.right - 8 - settings.controlBoxWidth) {
-                return HTNOWHERE;
+                return HTMINBUTTON;
             }
             return HTNOWHERE;
         } else if (cursorPos.x >= windowRect.left + 8 && cursorPos.x < windowRect.left + settings.iconWidth + 8) {
@@ -114,7 +114,6 @@ LRESULT Win32CustomTitlebar::getBorderlessHitTest(HWND hwnd, UINT uMsg, WPARAM w
         && cursorPos.x >= windowRect.left + 8 && cursorPos.x <= windowRect.right - 8) {
         return HTCAPTION;
     }
-
     return HTNOWHERE;
 }
 
@@ -138,5 +137,5 @@ LRESULT Win32CustomTitlebar::getWmNcCalcSize(HWND hwnd, UINT uMsg, WPARAM wParam
             ncParams->rgrc[0].top += settings.frameBorderThickness;
         }
     }
-    return LRESULT(0);
+    return 0;
 }
