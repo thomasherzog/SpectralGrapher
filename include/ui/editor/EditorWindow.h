@@ -8,6 +8,7 @@
 
 #include "ui/editor/popups/SettingsPopup.h"
 #include "ui/editor/views/ViewportBarsView.h"
+#include "renderer/MandelbrotRenderer.h"
 
 class EditorWindow : public windowing::VulkanWindow {
 public:
@@ -26,7 +27,7 @@ public:
 private:
     std::unique_ptr<ImGuiRenderer> imguiRenderer;
 
-    std::unique_ptr<ComputeRenderer> computeRenderer;
+    std::unique_ptr<MandelbrotRenderer> computeRenderer;
 
     vk::Semaphore renderProcessToUISemaphore;
 

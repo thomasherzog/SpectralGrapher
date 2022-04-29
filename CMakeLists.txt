@@ -50,7 +50,9 @@ list(APPEND source_files
         src/renderer/general/RecordedCommandBuffer.cpp
         src/renderer/general/SwapchainImageRenderer.cpp
         src/renderer/general/ImGuiRenderer.cpp
+
         src/renderer/ComputeRenderer.cpp
+        src/renderer/MandelbrotRenderer.cpp
         )
 
 add_executable(SpectralGrapher ${source_files})

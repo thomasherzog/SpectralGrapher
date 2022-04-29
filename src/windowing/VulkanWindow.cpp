@@ -8,14 +8,14 @@ namespace windowing {
         }
 
         std::vector<std::tuple<std::string, bool>> instanceExtensions = {
-                std::make_tuple("OOF", true)
+                {"OOF", true} // Optional extension
         };
         const std::vector<std::string> validationLayers = {
-                "VK_LAYER_KHRONOS_validation",
+                //"VK_LAYER_KHRONOS_validation",
         };
         std::vector<std::tuple<std::string, bool>> deviceExtensions = {
-                std::make_tuple(VK_KHR_SHADER_CLOCK_EXTENSION_NAME, false),
-                std::make_tuple(VK_KHR_SWAPCHAIN_EXTENSION_NAME, false),
+                {VK_KHR_SHADER_CLOCK_EXTENSION_NAME,             false},
+                {VK_KHR_SWAPCHAIN_EXTENSION_NAME,                false},
         };
 
         uint32_t extensions_count = 0;
@@ -60,7 +60,7 @@ namespace windowing {
     VulkanWindow::~VulkanWindow() {
         context->getDevice()->getVkDevice().waitIdle();
 
-        for (auto& commandPool: commandPools) {
+        for (auto &commandPool: commandPools) {
             context->getDevice()->getVkDevice().destroyCommandPool(commandPool);
         }
 
@@ -121,7 +121,6 @@ namespace windowing {
             default:
                 throw std::runtime_error("Swap chain image presentation failed");
         }
-
     }
 
     void VulkanWindow::recreateSwapchain() {

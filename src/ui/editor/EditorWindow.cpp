@@ -13,7 +13,7 @@ CMRC_DECLARE(fonts);
 
 EditorWindow::EditorWindow() {
     imguiRenderer = std::make_unique<ImGuiRenderer>(context, window, *swapchain);
-    computeRenderer = std::make_unique<ComputeRenderer>(context, swapchain->extent.width, swapchain->extent.height, 2);
+    computeRenderer = std::make_unique<MandelbrotRenderer>(context, swapchain->extent.width, swapchain->extent.height, 2);
 
     renderProcessToUISemaphore = context->getDevice()->getVkDevice().createSemaphore(vk::SemaphoreCreateInfo());
 

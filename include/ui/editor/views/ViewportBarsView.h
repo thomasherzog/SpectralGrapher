@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "renderer/ComputeRenderer.h"
+#include "renderer/MandelbrotRenderer.h"
 
 #ifdef _WIN32
 #include "native/windows/Win32CustomTitlebar.h"
@@ -16,6 +17,8 @@ public:
     ~ViewportBarsView();
 
     void renderView(std::unique_ptr<ComputeRenderer> const &computeRenderer);
+
+    void renderView(std::unique_ptr<MandelbrotRenderer> const &mandelbrotRenderer);
 
 private:
     GLFWwindow *window;

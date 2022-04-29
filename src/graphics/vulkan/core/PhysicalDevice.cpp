@@ -62,5 +62,4 @@ namespace vulkan::PhysicalDevice {
         return iterator != extensionProperties.end();
     }
 
-
 }
