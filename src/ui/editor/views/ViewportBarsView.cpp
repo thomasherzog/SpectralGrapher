@@ -198,7 +198,7 @@ void ViewportBarsView::renderView(const std::unique_ptr<MandelbrotRenderer> &man
     ImGui::PopStyleVar(4);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-    if (ImGui::BeginViewportSideBar("##SecondTitleBar", nullptr, ImGuiDir_Up, 22,
+    if (ImGui::BeginViewportSideBar("##SecondTitleBar", nullptr, ImGuiDir_Up, ImGui::GetFrameHeight(),
                                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_MenuBar)) {
         if (ImGui::BeginMenuBar()) {
@@ -209,7 +209,7 @@ void ViewportBarsView::renderView(const std::unique_ptr<MandelbrotRenderer> &man
         }
     }
     ImGui::End();
-    if (ImGui::BeginViewportSideBar("##MainStatusBar", nullptr, ImGuiDir_Down, 22,
+    if (ImGui::BeginViewportSideBar("##MainStatusBar", nullptr, ImGuiDir_Down, ImGui::GetFrameHeight(),
                                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_MenuBar)) {
         if (ImGui::BeginMenuBar()) {

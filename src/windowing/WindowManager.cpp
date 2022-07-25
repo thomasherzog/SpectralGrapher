@@ -43,9 +43,14 @@ namespace windowing {
     void WindowManager::loopManager() {
         while (running && (!windows.empty())) {
 
-            windows.erase(std::remove_if(windows.begin(), windows.end(), [](const std::shared_ptr<BaseWindow> &window) {
-                return glfwWindowShouldClose(window->getWindow());
-            }), windows.end());
+            auto iter = windows.begin();
+            while (iter != windows.end()) {
+                auto window = (*iter)->getWindow();
+                if (glfwWindowShouldClose(window)) {
+                    glfwDestroyWindow(window);
+                    iter = windows.erase(iter);
+                } else ++iter;
+            }
 
             std::vector<std::shared_ptr<BaseWindow>>::size_type size = windows.size();
             for (std::vector<std::shared_ptr<BaseWindow>>::size_type i = 0; i < size; ++i) {
@@ -55,6 +60,5 @@ namespace windowing {
             glfwPollEvents();
         }
     }
-
 
 }

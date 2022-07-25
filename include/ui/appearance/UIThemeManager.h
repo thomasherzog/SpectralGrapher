@@ -27,7 +27,7 @@ public:
 
     ~UIThemeManager();
 
-    bool applyTheme(const Theme &theme);
+    void applyTheme(const Theme &theme);
 
     std::vector<Theme> listAvailableThemes();
 

@@ -54,7 +54,7 @@ void SettingsPopup::renderPopup(std::shared_ptr<vulkan::Context> &context) {
         }
         ImGui::EndChild();
 
-        ImGui::End();
+        ImGui::EndPopup();
     }
 }
 

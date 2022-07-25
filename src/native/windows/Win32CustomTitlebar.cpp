@@ -7,7 +7,7 @@ Win32CustomTitlebar::Win32CustomTitlebar(GLFWwindow *window, TitlebarProperties 
                                                                                               properties(properties) {
     HWND hwnd = glfwGetWin32Window(window);
 
-    brush = ::CreateSolidBrush(RGB(36, 36, 36));
+    brush = CreateSolidBrush(RGB(36, 36, 36));
 
     SetWindowSubclass(hwnd, &Win32CustomTitlebar::staticCustomSubclass, 1, (DWORD_PTR) this);
 
@@ -17,8 +17,8 @@ Win32CustomTitlebar::Win32CustomTitlebar(GLFWwindow *window, TitlebarProperties 
 }
 
 Win32CustomTitlebar::~Win32CustomTitlebar() {
-    ::DeleteObject(brush);
-    ::RemoveWindowSubclass(glfwGetWin32Window(window), &Win32CustomTitlebar::staticCustomSubclass, 1);
+    DeleteObject(brush);
+    RemoveWindowSubclass(glfwGetWin32Window(window), &Win32CustomTitlebar::staticCustomSubclass, 1);
 }
 
 
@@ -67,7 +67,7 @@ CALLBACK Win32CustomTitlebar::customSubclass(HWND hwnd, UINT uMsg, WPARAM wParam
         }
         case WM_TIMER: {
             auto *base = static_cast<windowing::VulkanWindow *>(glfwGetWindowUserPointer(window));
-            if(isResizing) {
+            if (isResizing) {
                 printf("Test");
                 base->recreateSwapchain();
             }

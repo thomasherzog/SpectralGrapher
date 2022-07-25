@@ -2,7 +2,10 @@
 
 namespace windowing {
 
-    VulkanWindow::VulkanWindow() : BaseWindow("This is a window title", getRequiredWindowHints()) {
+    VulkanWindow::VulkanWindow() : VulkanWindow("Vulkan Window - Spectral Grapher", 1920, 1080) {}
+
+    VulkanWindow::VulkanWindow(const std::string& title, int width, int height) : BaseWindow(title, getRequiredWindowHints(),
+                                                                                      width, height) {
         if (!glfwVulkanSupported()) {
             throw std::runtime_error("Vulkan not supported!");
         }
@@ -11,11 +14,11 @@ namespace windowing {
                 {"OOF", true} // Optional extension
         };
         const std::vector<std::string> validationLayers = {
-                //"VK_LAYER_KHRONOS_validation",
+                "VK_LAYER_KHRONOS_validation",
         };
         std::vector<std::tuple<std::string, bool>> deviceExtensions = {
-                {VK_KHR_SHADER_CLOCK_EXTENSION_NAME,             false},
-                {VK_KHR_SWAPCHAIN_EXTENSION_NAME,                false},
+                {VK_KHR_SHADER_CLOCK_EXTENSION_NAME, false},
+                {VK_KHR_SWAPCHAIN_EXTENSION_NAME,    false},
         };
 
         uint32_t extensions_count = 0;
@@ -27,15 +30,16 @@ namespace windowing {
 
         vk::PhysicalDeviceFeatures features{};
         features.shaderInt64 = true;
+        features.shaderFloat64 = true;
 
         vk::PhysicalDeviceShaderClockFeaturesKHR shaderClockFeatures{true};
 
         context = std::make_shared<vulkan::Context>(instanceExtensions, validationLayers, deviceExtensions, features,
                                                     &shaderClockFeatures, window);
 
-        int width, height;
-        glfwGetWindowSize(window, &width, &height);
-        uint32_t windowSize[2] = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+        int gWidth, gHeight;
+        glfwGetWindowSize(window, &gWidth, &gHeight);
+        uint32_t windowSize[2] = {static_cast<uint32_t>(gWidth), static_cast<uint32_t>(gHeight)};
         swapchain = std::make_unique<vulkan::Swapchain>(context, windowSize);
 
         inFlightFrames = std::make_unique<vulkan::InFlightFrames>(context, 2);
@@ -63,8 +67,6 @@ namespace windowing {
         for (auto &commandPool: commandPools) {
             context->getDevice()->getVkDevice().destroyCommandPool(commandPool);
         }
-
-        glfwDestroyWindow(window);
     }
 
     std::optional<uint32_t> VulkanWindow::acquireNextImage(vulkan::SyncObject syncObject) {

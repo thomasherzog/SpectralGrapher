@@ -1,11 +1,11 @@
 #include "ui/editor/EditorWindow.h"
 
-#include "ui/appearance/UIThemeManager.h"
-
 #include "ui/editor/views/ViewportView.h"
 #include "ui/editor/views/DockSpaceView.h"
 #include "ui/editor/views/PropertiesView.h"
 #include "ui/editor/views/ViewportBarsView.h"
+
+#include "IconsMaterialDesign.h"
 
 #include <cmrc/cmrc.hpp>
 
@@ -13,7 +13,8 @@ CMRC_DECLARE(fonts);
 
 EditorWindow::EditorWindow() {
     imguiRenderer = std::make_unique<ImGuiRenderer>(context, window, *swapchain);
-    computeRenderer = std::make_unique<MandelbrotRenderer>(context, swapchain->extent.width, swapchain->extent.height, 2);
+    computeRenderer = std::make_unique<MandelbrotRenderer>(context, swapchain->extent.width, swapchain->extent.height,
+                                                           2);
 
     renderProcessToUISemaphore = context->getDevice()->getVkDevice().createSemaphore(vk::SemaphoreCreateInfo());
 
@@ -30,7 +31,6 @@ EditorWindow::EditorWindow() {
     ImFontConfig cfg;
     cfg.MergeMode = true;
 
-    builder.AddChar(0xE700); // "GlobalNavigationButton" button icon
     builder.AddChar(0xE106); // "Close window" button icon
     builder.AddChar(0xE949); // "Iconify window" button icon
     builder.AddChar(0xE739); // "Maximize window" button icon
@@ -38,10 +38,14 @@ EditorWindow::EditorWindow() {
     builder.BuildRanges(&ranges);
     auto winFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem2.data(), fontMem2.size(), 10.0f, &cfg,
                                                               ranges.Data);
-    // TODO: END INCLUDE ONLY ON WINDOWS
-    UIThemeManager tm{};
-    tm.applyTheme(tm.listAvailableThemes().at(3));
-    // TODO: REMOVE (!)
+
+    /*auto font2 = fs.open("fonts/MaterialIcons-Regular.ttf");
+    std::string fontMem2 = {font2.begin(), font2.end()};
+    static const ImWchar icons_ranges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
+    ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;icons_config.GlyphOffset = { 0.f, 3.f };
+    auto iconFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(fontMem2.data(), fontMem2.size(), 16.0f, &icons_config,
+                                               icons_ranges);*/
+    ImGui::GetIO().Fonts->Build();
 
     ImGui::GetIO().FontDefault = openSansFont;
 
@@ -49,6 +53,9 @@ EditorWindow::EditorWindow() {
         return ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
     });
     ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+    tm.applyTheme(tm.listAvailableThemes().at(3));
+    // TODO: REMOVE (!)
 
     onInitializeUI();
 }
@@ -65,6 +72,8 @@ void EditorWindow::onSwapchainRebuild() {
 
 void EditorWindow::onRender(vulkan::SyncObject syncObject, uint32_t imageIndex) {
     context->getDevice()->getVkDevice().resetFences(syncObject.fence);
+
+    preRenderQueue.flush();
 
     auto computeCmd = computeRenderer->recordCommandBuffer();
     computeCmd.submit({}, {}, {renderProcessToUISemaphore}, nullptr);

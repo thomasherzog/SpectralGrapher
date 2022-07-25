@@ -21,10 +21,10 @@ public:
 
     RecordedCommandBuffer recordCommandBuffer(vulkan::Swapchain &swapchain, int imageIndex);
 
+    ImGuiContext *imguiContext;
+
 private:
     std::shared_ptr<vulkan::Context> context;
-
-    ImGuiContext *imguiContext;
 
     std::vector<vk::Framebuffer> framebuffers;
 

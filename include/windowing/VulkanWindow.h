@@ -5,6 +5,7 @@
 
 #include "graphics/vulkan/core/Swapchain.h"
 #include "graphics/vulkan/core/InFlightFrames.h"
+#include "renderer/FunctionQueue.h"
 
 namespace windowing {
     class VulkanWindow;
@@ -13,6 +14,8 @@ namespace windowing {
 class windowing::VulkanWindow : public BaseWindow {
 public:
     VulkanWindow();
+
+    VulkanWindow(const std::string& title, int width, int height);
 
     ~VulkanWindow();
 
@@ -40,6 +43,8 @@ protected:
     std::unique_ptr<vulkan::InFlightFrames> inFlightFrames;
 
     std::vector<vk::Fence> imagesInFlight;
+
+    FunctionQueue preRenderQueue;
 
 private:
     static std::vector<std::tuple<int, int>> getRequiredWindowHints();

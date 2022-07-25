@@ -120,6 +120,40 @@ static ImGui_ImplGlfw_Data* ImGui_ImplGlfw_GetBackendData()
     return ImGui::GetCurrentContext() ? (ImGui_ImplGlfw_Data*)ImGui::GetIO().BackendPlatformUserData : NULL;
 }
 
+#include <map>
+std::map<GLFWwindow*, ImGuiContext*>    ImGui_ImplGlfw_Contexts;
+ImGuiContext*                           ImGui_ImplGlfw_ContextPrev;
+
+// Fix for when multiple imgui context are setup in multiple host windows.
+// Glfw events are a bit messed; this ensures that the right windows events call upon the right imgui contexts. (see PR#3934 )
+inline void ImGui_ImplGlfw_SetContextFor(GLFWwindow* window)
+{
+    if(ImGui_ImplGlfw_Contexts.size()>1){
+        auto context = ImGui_ImplGlfw_Contexts.find(window);
+        if(context != ImGui_ImplGlfw_Contexts.end()){
+            ImGui_ImplGlfw_ContextPrev = ImGui::GetCurrentContext();
+            ImGui::SetCurrentContext(context->second);
+        }
+    }
+}
+
+inline void ImGui_ImplGlfw_RestoreContext()
+{
+    if(ImGui_ImplGlfw_ContextPrev){
+        ImGui::SetCurrentContext(ImGui_ImplGlfw_ContextPrev);
+        ImGui_ImplGlfw_ContextPrev = nullptr;
+    }
+}
+
+inline void ImGui_ImplGlfw_RegisterWindowContext(GLFWwindow* window, ImGuiContext* context)
+{
+    ImGui_ImplGlfw_Contexts.emplace( window, context );
+}
+inline void ImGui_ImplGlfw_RemoveWindowContext(GLFWwindow* window)
+{
+    ImGui_ImplGlfw_Contexts.erase(window);
+}
+
 // Forward Declarations
 static void ImGui_ImplGlfw_UpdateMonitors();
 static void ImGui_ImplGlfw_InitPlatformInterface();
@@ -138,16 +172,20 @@ static void ImGui_ImplGlfw_SetClipboardText(void* user_data, const char* text)
 
 void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
+    ImGui_ImplGlfw_SetContextFor(window);
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackMousebutton != NULL && window == bd->Window)
         bd->PrevUserCallbackMousebutton(window, button, action, mods);
 
     if (action == GLFW_PRESS && button >= 0 && button < IM_ARRAYSIZE(bd->MouseJustPressed))
         bd->MouseJustPressed[button] = true;
+
+    ImGui_ImplGlfw_RestoreContext();
 }
 
 void ImGui_ImplGlfw_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
+    ImGui_ImplGlfw_SetContextFor(window);
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackScroll != NULL && window == bd->Window)
         bd->PrevUserCallbackScroll(window, xoffset, yoffset);
@@ -155,10 +193,14 @@ void ImGui_ImplGlfw_ScrollCallback(GLFWwindow* window, double xoffset, double yo
     ImGuiIO& io = ImGui::GetIO();
     io.MouseWheelH += (float)xoffset;
     io.MouseWheel += (float)yoffset;
+
+    ImGui_ImplGlfw_RestoreContext();
 }
 
 void ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    ImGui_ImplGlfw_SetContextFor(window);
+
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackKey != NULL && window == bd->Window)
         bd->PrevUserCallbackKey(window, key, scancode, action, mods);
@@ -187,20 +229,29 @@ void ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int key, int scancode, int a
 #else
     io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 #endif
+
+    ImGui_ImplGlfw_RestoreContext();
+
 }
 
 void ImGui_ImplGlfw_WindowFocusCallback(GLFWwindow* window, int focused)
 {
+    ImGui_ImplGlfw_SetContextFor(window);
+
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackWindowFocus != NULL && window == bd->Window)
         bd->PrevUserCallbackWindowFocus(window, focused);
 
     ImGuiIO& io = ImGui::GetIO();
     io.AddFocusEvent(focused != 0);
+
+    ImGui_ImplGlfw_RestoreContext();
 }
 
 void ImGui_ImplGlfw_CursorEnterCallback(GLFWwindow* window, int entered)
 {
+    ImGui_ImplGlfw_SetContextFor(window);
+
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackCursorEnter != NULL && window == bd->Window)
         bd->PrevUserCallbackCursorEnter(window, entered);
@@ -209,16 +260,22 @@ void ImGui_ImplGlfw_CursorEnterCallback(GLFWwindow* window, int entered)
         bd->MouseWindow = window;
     if (!entered && bd->MouseWindow == window)
         bd->MouseWindow = NULL;
+
+    ImGui_ImplGlfw_RestoreContext();
 }
 
 void ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c)
 {
+    ImGui_ImplGlfw_SetContextFor(window);
+
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackChar != NULL && window == bd->Window)
         bd->PrevUserCallbackChar(window, c);
 
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharacter(c);
+
+    ImGui_ImplGlfw_RestoreContext();
 }
 
 void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor*, int)
@@ -242,6 +299,8 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
 #if GLFW_HAS_MOUSE_PASSTHROUGH || (GLFW_HAS_WINDOW_HOVERED && defined(_WIN32))
     io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport; // We can set io.MouseHoveredViewport correctly (optional, not easy)
 #endif
+
+    ImGui_ImplGlfw_RegisterWindowContext( window, ImGui::GetCurrentContext() );
 
     bd->Window = window;
     bd->Time = 0.0;
@@ -369,6 +428,8 @@ void ImGui_ImplGlfw_Shutdown()
 
     for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
         glfwDestroyCursor(bd->MouseCursors[cursor_n]);
+
+    ImGui_ImplGlfw_RemoveWindowContext(bd->Window);
 
     io.BackendPlatformName = NULL;
     io.BackendPlatformUserData = NULL;
@@ -665,6 +726,8 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 #ifdef _WIN32
     viewport->PlatformHandleRaw = glfwGetWin32Window(vd->Window);
 #endif
+    ImGui_ImplGlfw_RegisterWindowContext(vd->Window, ImGui::GetCurrentContext());
+
     glfwSetWindowPos(vd->Window, (int)viewport->Pos.x, (int)viewport->Pos.y);
 
     // Install GLFW callbacks for secondary viewports
@@ -704,6 +767,7 @@ static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
 
             glfwDestroyWindow(vd->Window);
         }
+        ImGui_ImplGlfw_RemoveWindowContext(vd->Window);
         vd->Window = NULL;
         IM_DELETE(vd);
     }

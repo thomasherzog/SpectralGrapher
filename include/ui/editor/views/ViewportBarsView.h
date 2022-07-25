@@ -12,7 +12,7 @@
 
 class ViewportBarsView {
 public:
-    ViewportBarsView(GLFWwindow* window);
+    explicit ViewportBarsView(GLFWwindow* window);
 
     ~ViewportBarsView();
 

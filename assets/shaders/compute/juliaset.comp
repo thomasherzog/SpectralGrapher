@@ -10,6 +10,7 @@ layout (binding = 1) uniform UniformBufferObject {
     vec2 viewportSize;
     float scale;
     int iterations;
+    vec2 cValue;
 } ubo;
 
 vec3 hsv2rgb(vec3 color) {
@@ -55,8 +56,8 @@ void main() {
     float x = ((pixCo.x * factorX + minX) / ubo.scale) + ubo.center.x;
     float y = ((pixCo.y * factorY + maxY) / ubo.scale) + ubo.center.y;
 
-    float zRe = 0;
-    float zIm = 0;
+    float zRe = x;
+    float zIm = y;
     int i = 0;
 
     for (; i < ubo.iterations; i++) {
@@ -64,28 +65,8 @@ void main() {
         float tempZIm = zIm;
 
         // Power 2
-        zRe = tempZRe * tempZRe - tempZIm * tempZIm + x;
-        zIm = 2 * tempZRe * tempZIm + y;
-
-        // Inverse Power 2
-        //zRe = tempZRe * tempZRe - tempZIm * tempZIm + (x == 0 ? 0 : x/(x*x+y*y));
-        //zIm = 2 * tempZRe * tempZIm + (y == 0 ? 0 : -y/(x*x+y*y));
-
-        // Power 3
-        //zRe = tempZRe*tempZRe*tempZRe - 3*tempZRe*tempZIm*tempZIm + x;
-        //zIm = 3*tempZRe*tempZRe*tempZIm - tempZIm*tempZIm*tempZIm + y;
-
-        // Inverse Power 3
-        //zRe = tempZRe*tempZRe*tempZRe - 3*tempZRe*tempZIm*tempZIm + (x == 0 ? 0 : x/(x*x+y*y));
-        //zIm = 3*tempZRe*tempZRe*tempZIm - tempZIm*tempZIm*tempZIm + (y == 0 ? 0 : -y/(x*x+y*y));
-
-        // Burning ship
-        //zRe = tempZRe * tempZRe - tempZIm * tempZIm + x;
-        //zIm = 2 * abs(tempZRe * tempZIm) + y;
-
-        // Tricorn
-        //zRe = tempZRe * tempZRe - tempZIm * tempZIm + x;
-        //zIm = -2 * tempZRe * tempZIm + y;
+        zRe = tempZRe * tempZRe - tempZIm * tempZIm + ubo.cValue.x;
+        zIm = 2 * tempZRe * tempZIm + ubo.cValue.y;
 
 
         if (zRe * zRe + zIm * zIm > 4) {

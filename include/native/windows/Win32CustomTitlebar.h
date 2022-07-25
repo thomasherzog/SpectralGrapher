@@ -1,7 +1,6 @@
 #ifndef SPECTRALGRAPHER_WIN32CUSTOMTITLEBAR_H
 #define SPECTRALGRAPHER_WIN32CUSTOMTITLEBAR_H
 
-
 #include <windows.h>
 #include <CommCtrl.h>
 #include <dwmapi.h>

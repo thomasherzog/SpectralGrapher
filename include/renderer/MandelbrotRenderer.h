@@ -16,8 +16,9 @@ struct MandelbrotUniformCamObj {
     alignas(16) glm::vec4 bounds = glm::vec4(-2, 1, -1.5, 1.5);
     alignas(8) glm::vec2 center = glm::vec2(0, 0);
     alignas(8) glm::vec2 viewportSize = glm::vec2(0,0);
-    alignas(4) float scale = 1;
+    alignas(4) float scale = 1.0;
     alignas(4) int iterations = 100;
+    alignas(8) glm::vec2 cValue = glm::vec2(-0.6,0.6);
 };
 
 class MandelbrotRenderer {

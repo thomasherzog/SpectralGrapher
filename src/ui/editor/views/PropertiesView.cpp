@@ -42,5 +42,7 @@ void PropertiesView::renderView(const std::unique_ptr<MandelbrotRenderer> &mande
 
     ImGui::DragInt("Iterations", (int *) &mandelbrotRenderer->ubo.iterations, 1);
 
+    ImGui::DragFloat2("cValue", (float *) &mandelbrotRenderer->ubo.cValue, 0.05);
+
     ImGui::End();
 }

@@ -19,7 +19,7 @@ UIThemeManager::UIThemeManager() : currentTheme(listAvailableThemes().at(0)) {};
 
 UIThemeManager::~UIThemeManager() = default;
 
-bool UIThemeManager::applyTheme(const Theme& theme) {
+void UIThemeManager::applyTheme(const Theme& theme) {
     ImGuiStyle style{};
     std::string themeSource;
     switch (theme.location) {
@@ -33,13 +33,15 @@ bool UIThemeManager::applyTheme(const Theme& theme) {
             }
             currentTheme = theme;
             ImGui::GetStyle() = style;
-            return true;
+            return;
         }
         case ThemeLocation::Memory: {
             themeSource = loadSourceFromMemory(theme.path);
-        }
-        default:
             break;
+        }
+        default: {
+            return;
+        }
     }
     auto jsonStruct = nlohmann::json::parse(themeSource);
     if (jsonStruct.contains("colors")) applyColors(jsonStruct["colors"], style);
@@ -62,7 +64,7 @@ std::vector<Theme> UIThemeManager::listAvailableThemes() {
 
     auto directoryIterator = cmrc::themes::get_filesystem().iterate_directory("themes/");
     std::for_each(directoryIterator.begin(), directoryIterator.end(), [&names](auto const &element) {
-        names.emplace_back(ThemeLocation::Memory, element.filename().substr(0, element.filename().find_last_of(".")));
+        names.emplace_back(ThemeLocation::Memory, element.filename().substr(0, element.filename().find_last_of('.')));
     });
 
     return names;

@@ -30,12 +30,15 @@ list(APPEND source_files
         src/windowing/WindowManager.cpp
         src/windowing/BaseWindow.cpp
         src/windowing/VulkanWindow.cpp
+        src/windowing/ImGuiWindow.cpp
 
         #src/shape/ShapeManager.cpp
         #src/shape/ShapeType.cpp
         #src/shape/ShapeFieldType.cpp
 
         src/ui/editor/EditorWindow.cpp
+        src/ui/editor/StartWindow.cpp
+
         src/ui/editor/views/ViewportView.cpp
         src/ui/editor/views/PropertiesView.cpp
         src/ui/editor/views/DockSpaceView.cpp
@@ -53,6 +56,7 @@ list(APPEND source_files
 
         src/renderer/ComputeRenderer.cpp
         src/renderer/MandelbrotRenderer.cpp
+        src/renderer/FunctionQueue.cpp
         )
 
 add_executable(SpectralGrapher ${source_files})

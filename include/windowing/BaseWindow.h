@@ -13,7 +13,8 @@ namespace windowing {
 
 class windowing::BaseWindow {
 public:
-    BaseWindow(const std::string &title, const std::vector<std::tuple<int, int>> &windowHints);
+    BaseWindow(const std::string &title, const std::vector<std::tuple<int, int>> &windowHints,
+               int width, int height);
 
     void renderWindow();
 

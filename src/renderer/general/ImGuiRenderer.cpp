@@ -66,8 +66,11 @@ ImGuiRenderer::ImGuiRenderer(std::shared_ptr<vulkan::Context> context, GLFWwindo
 
 ImGuiRenderer::~ImGuiRenderer() {
     context->getDevice()->getVkDevice().waitIdle();
+
+    ImGui::SetCurrentContext(imguiContext);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext(imguiContext);
 
     for (auto &framebuffer: framebuffers) {
         context->getDevice()->getVkDevice().destroyFramebuffer(framebuffer);

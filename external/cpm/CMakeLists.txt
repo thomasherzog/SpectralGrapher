@@ -13,7 +13,8 @@ list(APPEND cpm_packages
         shaderc
         stb
         entt
-        json)
+        json
+        IconFontCppHeaders)
 
 include(CPM)
 

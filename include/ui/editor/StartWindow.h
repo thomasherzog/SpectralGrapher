@@ -1,5 +1,5 @@
-#ifndef SPECTRALGRAPHER_EDITORWINDOW_H
-#define SPECTRALGRAPHER_EDITORWINDOW_H
+#ifndef SPECTRALGRAPHER_STARTWINDOW_H
+#define SPECTRALGRAPHER_STARTWINDOW_H
 
 #include "windowing/VulkanWindow.h"
 #include "renderer/ComputeRenderer.h"
@@ -11,11 +11,11 @@
 #include "ui/appearance/UIThemeManager.h"
 #include "renderer/MandelbrotRenderer.h"
 
-class EditorWindow : public windowing::VulkanWindow {
+class StartWindow : public windowing::VulkanWindow  {
 public:
-    EditorWindow();
+    StartWindow();
 
-    ~EditorWindow();
+    ~StartWindow();
 
     void onRender(vulkan::SyncObject syncObject, uint32_t imageIndex) override;
 
@@ -28,16 +28,10 @@ public:
 private:
     std::unique_ptr<ImGuiRenderer> imguiRenderer;
 
-    std::unique_ptr<MandelbrotRenderer> computeRenderer;
+// REMOVE
 
-    vk::Semaphore renderProcessToUISemaphore;
-
-    std::unordered_map<std::string, std::tuple<std::unique_ptr<Popup>, std::function<void(Popup &popup)>>> popups;
-
-    //TODO: Remove
-    std::unique_ptr<ViewportBarsView> vbView;
     UIThemeManager tm;
 };
 
 
-#endif //SPECTRALGRAPHER_EDITORWINDOW_H
+#endif //SPECTRALGRAPHER_STARTWINDOW_H

@@ -1,6 +1,7 @@
 #include "ui/editor/views/ViewportView.h"
 
 #include <GLFW/glfw3.h>
+#include "IconsMaterialDesign.h"
 
 void ViewportView::renderView(std::unique_ptr<ComputeRenderer> const &computeRenderer) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -62,10 +63,11 @@ void ViewportView::renderView(std::unique_ptr<MandelbrotRenderer> const &mandelb
             ImVec2(frameWidth / mandelbrotRenderer->imageWidth, frameHeight / mandelbrotRenderer->imageHeight)
     );
 
-    printf("%f - %f\n", frameWidth, frameHeight);
-
     if (ImGui::IsItemHovered()) {
         if (ImGui::GetIO().MouseWheel != 0) {
+            std::cout << "Mouse Position: " << ImGui::GetMousePos().x - ImGui::GetWindowPos().x << " "
+                      << ImGui::GetMousePos().y - ImGui::GetWindowPos().y << std::endl;
+
             mandelbrotRenderer->ubo.scale += ImGui::GetIO().MouseWheel / 2.0f *
                                              (mandelbrotRenderer->ubo.scale != 0 ? mandelbrotRenderer->ubo.scale : 1);
         }
