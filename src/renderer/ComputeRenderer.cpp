@@ -8,7 +8,7 @@
 CMRC_DECLARE(shaders);
 
 ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int width, int height, int framesInFlight)
-        : context(std::move(context)), framesInFlight(framesInFlight) {
+        : context(std::move(context)), framesInFlight(framesInFlight), imageWidth(width), imageHeight(height) {
 
     spheres.push_back({glm::vec3{0, 1, 0}, 0.25f});
     spheres.push_back({glm::vec3{0, 2, 0}, 0.35f});
@@ -26,7 +26,7 @@ ComputeRenderer::ComputeRenderer(std::shared_ptr<vulkan::Context> context, int w
         }
     }
 
-    createComputeImage(width, height);
+    createComputeImage();
     createUniformBuffer();
     createDescriptorSetLayout();
     createComputePipeline();
@@ -176,13 +176,15 @@ RecordedCommandBuffer ComputeRenderer::recordCommandBuffer() {
 
 
 void ComputeRenderer::resizeImage(int width, int height) {
+    imageWidth = width;
+    imageHeight = height;
     ubo.sampleIndex = 0;
 
     context->getDevice()->getVkDevice().destroyImageView(accumulationImage.imageView);
     context->getDevice()->getVkDevice().destroySampler(accumulationImage.sampler);
     vmaDestroyImage(context->getAllocator(), accumulationImage.image, accumulationImage.allocation);
 
-    createComputeImage(width, height);
+    createComputeImage();
     updateDescriptorSets();
 
     imguiTexture = ImGui_ImplVulkan_AddTexture(accumulationImage.sampler,
@@ -196,7 +198,7 @@ void ComputeRenderer::resizeImage(int width, int height) {
 // Creation functions
 // ==================
 
-void ComputeRenderer::createComputeImage(int width, int height) {
+void ComputeRenderer::createComputeImage() {
     VmaAllocation allocation;
     vk::Image image;
     vk::Sampler sampler;
@@ -206,7 +208,7 @@ void ComputeRenderer::createComputeImage(int width, int height) {
             {},
             vk::ImageType::e2D,
             vk::Format::eB8G8R8A8Unorm,
-            {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1},
+            {static_cast<uint32_t>(imageWidth), static_cast<uint32_t>(imageHeight), 1},
             1,
             1,
             vk::SampleCountFlagBits::e1,

@@ -8,7 +8,16 @@ void ViewportView::renderView(std::unique_ptr<ComputeRenderer> const &computeRen
     ImGui::Begin("Viewport");
 
     auto [frameWidth, frameHeight] = ImGui::GetContentRegionAvail();
-    ImGui::Image(computeRenderer->imguiTexture, ImVec2(frameWidth, frameHeight));
+    computeRenderer->ubo.viewportSize = glm::vec2(frameWidth, frameHeight);
+    computeRenderer->ubo.sampleIndex = 0;
+
+    ImGui::Image(
+            computeRenderer->imguiTexture,
+            ImVec2(frameWidth, frameHeight),
+            ImVec2(0, 0),
+            ImVec2(frameWidth / computeRenderer->imageWidth, frameHeight / computeRenderer->imageHeight)
+    );
+
     if (ImGui::IsItemHovered()) {
         if (ImGui::GetIO().KeyCtrl && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
             auto delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);

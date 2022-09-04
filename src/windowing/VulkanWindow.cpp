@@ -18,7 +18,7 @@ namespace windowing {
         };
         std::vector<std::tuple<std::string, bool>> deviceExtensions = {
                 {VK_KHR_SHADER_CLOCK_EXTENSION_NAME, false},
-                {VK_KHR_SWAPCHAIN_EXTENSION_NAME,    false},
+                {VK_KHR_SWAPCHAIN_EXTENSION_NAME,    false}
         };
 
         uint32_t extensions_count = 0;

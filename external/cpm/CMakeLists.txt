@@ -14,7 +14,8 @@ list(APPEND cpm_packages
         stb
         entt
         json
-        IconFontCppHeaders)
+        IconFontCppHeaders
+        )
 
 include(CPM)
 

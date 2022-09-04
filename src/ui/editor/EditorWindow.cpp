@@ -108,4 +108,6 @@ void EditorWindow::onRenderUI() {
     PropertiesView::renderView(computeRenderer);
     ViewportView::renderView(computeRenderer);
     vbView->renderView(computeRenderer);
+
+    ImGui::ShowDemoWindow();
 }

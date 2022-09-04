@@ -2,7 +2,6 @@
 #define SPECTRALGRAPHER_EDITORWINDOW_H
 
 #include "windowing/VulkanWindow.h"
-#include "renderer/ComputeRenderer.h"
 #include "renderer/general/SwapchainImageRenderer.h"
 #include "renderer/general/ImGuiRenderer.h"
 

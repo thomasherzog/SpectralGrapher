@@ -49,6 +49,7 @@ struct UniformCamObj {
     alignas(4) int maxTime = 7;
     alignas(4) int maxSteps = 200;
     alignas(16) glm::vec3 backgroundColor = glm::vec3(0.0f, 0.0f, 0.0f);
+    alignas(8) glm::vec2 viewportSize = glm::vec2(0, 0);
 };
 
 class ComputeRenderer {
@@ -90,6 +91,8 @@ public:
     std::vector<vk::DescriptorSet> descriptorSetsObj;
 
     ImTextureID imguiTexture;
+    int imageWidth;
+    int imageHeight;
 
 private:
     std::shared_ptr<vulkan::Context> context;
@@ -106,7 +109,7 @@ private:
 
     std::vector<vk::DescriptorSet> descriptorSets;
 
-    void createComputeImage(int width, int height);
+    void createComputeImage();
 
     void createUniformBuffer();
 

@@ -62,5 +62,7 @@ list(APPEND source_files
 add_executable(SpectralGrapher ${source_files})
 
 target_compile_definitions(SpectralGrapher PUBLIC VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
+
+add_subdirectory(build)
 add_subdirectory(external)
 add_subdirectory(assets)

@@ -18,6 +18,8 @@ layout (binding = 1) uniform UniformBufferObject {
     int maxSteps;
 
     vec3 backgroundColor;
+
+    vec2 viewportSize;
 } ubo;
 
 // =====================
@@ -262,11 +264,10 @@ float getHaltonSample(int index, int base){
 float calculateAmbientOcclusion(vec3 position, vec3 normal) {
     float occ = 0.0;
     float sca = 1.0;
-    for( int i=0; i<20; i++ )
-    {
+    for( int i=0; i<20; i++ ) {
         float r = 0.01 + 0.1*float(i);
         vec3 aopos =  normal * r + position;
-        float d = getNearestDistance( aopos ).distance;
+        float d = getNearestDistance(aopos).distance;
         occ += (r - d)*sca;
         sca *= 0.85;
     }
@@ -277,9 +278,7 @@ void main() {
     vec2 pixCo = gl_GlobalInvocationID.xy;
     ivec2 imgSize = imageSize(accumulativeImage);
 
-    if(pixCo.x > imgSize.x && pixCo.y > imgSize.y) {
-        return;
-    }
+    if (pixCo.x > ubo.viewportSize.x || pixCo.y > ubo.viewportSize.y) return;
 
     vec3 sampledColor = vec3(0.0f,0.0f,0.0f);
     for(int s = 1; s <= ubo.sampleCount; s++) {
@@ -309,7 +308,7 @@ void main() {
     }
 
     vec4 accumulatedColor = imageLoad(accumulativeImage, ivec2(gl_GlobalInvocationID.xy));
-    vec4 resultColor = (accumulatedColor * ubo.sampleIndex + vec4(sampledColor,1.0f) * ubo.sampleCount) / (ubo.sampleIndex + ubo.sampleCount);
+    vec4 resultColor = (accumulatedColor * ubo.sampleIndex + vec4(sampledColor, 1.0f) * ubo.sampleCount) / (ubo.sampleIndex + ubo.sampleCount);
     imageStore(accumulativeImage, ivec2(gl_GlobalInvocationID.xy), resultColor);
 }
 

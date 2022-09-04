@@ -32,6 +32,8 @@ void main() {
     vec2 pixCo = gl_GlobalInvocationID.xy;
     ivec2 imgSize = ivec2(ubo.viewportSize);
 
+    if(pixCo.x > ubo.viewportSize.x || pixCo.y > ubo.viewportSize.y) return;
+
     float minX = ubo.bounds[0];
     float maxX = ubo.bounds[1];
     float minY = ubo.bounds[2];
