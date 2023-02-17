@@ -7,10 +7,6 @@ list(APPEND cpm_packages
         implot
         imgui-node-editor
         glm
-        SPIRV-Headers
-        SPIRV-Tools
-        glslang
-        shaderc
         stb
         entt
         json

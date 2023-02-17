@@ -1,4 +1,4 @@
-find_package(Vulkan REQUIRED QUIET)
+find_package(Vulkan COMPONENTS shaderc_combined REQUIRED QUIET)
 
 add_subdirectory(imgui)
 add_subdirectory(imgui_impl)
@@ -7,6 +7,7 @@ add_subdirectory(cpm)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         Vulkan::Vulkan
+        Vulkan::shaderc_combined
         imgui
         imgui_impl)
 

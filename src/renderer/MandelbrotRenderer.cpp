@@ -288,7 +288,6 @@ void MandelbrotRenderer::createDescriptorSetLayout() {
 void MandelbrotRenderer::createComputePipeline() {
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
-    options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
     auto fs = cmrc::shaders::get_filesystem();
     auto shaderResource = fs.open("shaders/compute/mandelbrot.comp");
